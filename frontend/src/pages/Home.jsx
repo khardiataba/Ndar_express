@@ -11,7 +11,7 @@ const featureCards = [
     title: "Rides & Deliveries",
     subtitle: "Courses rapides, livraisons locales et depots urgents.",
     accent: "from-[#165c96] to-[#2e78ba]",
-    emoji: "🚕",
+    badge: "Express",
     action: "/ride"
   },
   {
@@ -19,7 +19,7 @@ const featureCards = [
     title: "Trusted Technicians",
     subtitle: "Artisans verifies pour depannage, installation et travaux.",
     accent: "from-[#d7ae49] to-[#f0cf72]",
-    emoji: "🧰",
+    badge: "Craft",
     action: "/service"
   },
   {
@@ -27,7 +27,7 @@ const featureCards = [
     title: "Food & Bakeries",
     subtitle: "Commandes de repas, gateaux et livraisons gourmandes.",
     accent: "from-[#18c56e] to-[#54db98]",
-    emoji: "🥐",
+    badge: "Gourmet",
     action: "/service"
   },
   {
@@ -35,7 +35,7 @@ const featureCards = [
     title: "Livreur Express",
     subtitle: "Colis, documents et courses urgentes en ville.",
     accent: "from-[#ef7f87] to-[#f5a16f]",
-    emoji: "🛵",
+    badge: "Speed",
     action: "/service"
   }
 ]
@@ -52,7 +52,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 5500,
     accent: "bg-[#eefaf2]",
-    icon: "🍗",
+    iconLabel: "FOOD",
     coords: { lat: 16.0308, lng: -16.5001 }
   },
   {
@@ -66,7 +66,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 8000,
     accent: "bg-[#fff6e2]",
-    icon: "🥐",
+    iconLabel: "BAK",
     coords: { lat: 16.042, lng: -16.5065 }
   },
   {
@@ -80,7 +80,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 2500,
     accent: "bg-[#edf5fb]",
-    icon: "🚕",
+    iconLabel: "RIDE",
     coords: { lat: 16.0283, lng: -16.4976 }
   },
   {
@@ -94,7 +94,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 7000,
     accent: "bg-[#fff1f1]",
-    icon: "💡",
+    iconLabel: "ELEC",
     coords: { lat: 16.0188, lng: -16.4919 }
   },
   {
@@ -108,7 +108,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 3000,
     accent: "bg-[#eef4ff]",
-    icon: "🛵",
+    iconLabel: "DLV",
     coords: { lat: 16.0262, lng: -16.4992 }
   },
   {
@@ -122,7 +122,7 @@ const discoveryCatalog = [
     isOpen: false,
     price: 12000,
     accent: "bg-[#fff2f7]",
-    icon: "💇",
+    iconLabel: "BEAU",
     coords: { lat: 16.0149, lng: -16.5072 }
   },
   {
@@ -136,17 +136,17 @@ const discoveryCatalog = [
     isOpen: true,
     price: 15000,
     accent: "bg-[#f6f0e6]",
-    icon: "🪚",
+    iconLabel: "WOOD",
     coords: { lat: 16.0068, lng: -16.5205 }
   }
 ]
 
 const serviceFamilies = [
-  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", icon: "🚘", route: "/ride" },
-  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", icon: "🧰", route: "/service" },
-  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", icon: "🍽️", route: "/service" },
-  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", icon: "💇", route: "/service" },
-  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", icon: "🛵", route: "/service" }
+  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", iconLabel: "TA", iconSymbol: "🚘", route: "/ride" },
+  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", iconLabel: "AR", iconSymbol: "🧰", route: "/service" },
+  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", iconLabel: "FO", iconSymbol: "🍽️", route: "/service" },
+  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", iconLabel: "BE", iconSymbol: "💇", route: "/service" },
+  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", iconLabel: "DL", iconSymbol: "🛵", route: "/service" }
 ]
 
 const quickFilters = ["Ouvert maintenant", "Livraison", "Trajet rapide", "Artisan", "Beaute", "Livreur"]
@@ -357,10 +357,20 @@ const Home = () => {
         <header className="rounded-[36px] border border-[#0b3154] bg-[linear-gradient(180deg,#0d416e_0%,#072a48_100%)] p-5 shadow-[0_24px_60px_rgba(8,35,62,0.30)]">
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="font-['Sora'] text-[34px] font-extrabold leading-none text-white">
-                Ndar<span className="text-[#f1c778]">Express</span>
+              <div className="mb-2 flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-white shadow-lg shadow-black/20">
+                  <img
+                    src="/logo.png"
+                    alt="Ndar Express"
+                    className="h-10 w-10 rounded-full object-cover"
+                    onError={(e) => { e.target.src = '/logo512.png'; }}
+                  />
+                </div>
+                <div className="font-['Sora'] text-[34px] font-extrabold leading-none text-white">
+                  Ndar<span className="text-[#f1c778]">Express</span>
+                </div>
               </div>
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-[#f3f8fc]">
+              <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-[#f3f8fc]">
                 <span>📍</span>
                 <span>{clientLocation.address || "Saint-Louis"}</span>
               </div>
@@ -392,6 +402,25 @@ const Home = () => {
               placeholder="Rechercher un resto, une course, un artisan, un livreur, une coiffure..."
               className="w-full border-none bg-transparent text-sm text-white outline-none placeholder:text-[#dbe8f3]"
             />
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[28px] bg-white/10 p-3 text-xs text-white backdrop-blur">
+              <p className="font-bold">Rapide</p>
+              <p className="mt-1">Réservation en 2 clics + géolocalisation automatique.</p>
+            </div>
+            <div className="rounded-[28px] bg-white/10 p-3 text-xs text-white backdrop-blur">
+              <p className="font-bold">Clair</p>
+              <p className="mt-1">Tarif transparent, estimation en temps réel.</p>
+            </div>
+            <div className="rounded-[28px] bg-white/10 p-3 text-xs text-white backdrop-blur">
+              <p className="font-bold">Sécurisé</p>
+              <p className="mt-1">Paiement multicartes + intégration Wave/OM.</p>
+            </div>
+            <div className="rounded-[28px] bg-white/10 p-3 text-xs text-white backdrop-blur">
+              <p className="font-bold">Local</p>
+              <p className="mt-1">Destinations Saint-Louis contenant votre zone.</p>
+            </div>
           </div>
         </header>
 
@@ -453,11 +482,13 @@ const Home = () => {
           <div className={`min-h-[240px] rounded-[32px] bg-gradient-to-br ${featureCards[activeSlide].accent} p-6 text-white shadow-[0_28px_70px_rgba(8,35,62,0.22)] transition-all duration-500`}>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">Yango style, Ndar spirit</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">Modern style, Ndar spirit</p>
                 <h1 className="mt-3 max-w-[220px] font-['Sora'] text-3xl font-extrabold leading-tight">{featureCards[activeSlide].title}</h1>
                 <p className="mt-3 max-w-[250px] text-sm text-white/85">{featureCards[activeSlide].subtitle}</p>
               </div>
-              <div className="text-6xl drop-shadow-lg">{featureCards[activeSlide].emoji}</div>
+              <div className="flex h-14 w-24 items-center justify-center rounded-2xl border border-white/30 bg-white/20 p-2 text-sm font-bold uppercase tracking-widest text-white shadow-lg">
+                {featureCards[activeSlide].badge}
+              </div>
             </div>
             <button
               onClick={() => navigate(featureCards[activeSlide].action)}
@@ -485,8 +516,10 @@ const Home = () => {
               onClick={() => navigate(item.route, { state: { suggestedCategory: item.key } })}
               className={`ndar-lift ${item.color} min-h-[138px] rounded-[28px] p-4 text-left text-white shadow-[0_22px_45px_rgba(8,35,62,0.16)]`}
             >
-              <div className="text-3xl">{item.icon}</div>
-              <h2 className="mt-5 font-['Sora'] text-lg font-bold leading-tight">{item.title}</h2>
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+                {item.iconSymbol}
+              </div>
+              <h2 className="font-['Sora'] text-lg font-bold leading-tight">{item.title}</h2>
               <p className="mt-2 text-xs text-white/85">{item.subtitle}</p>
             </button>
           ))}
@@ -548,7 +581,7 @@ const Home = () => {
                 }}
                 className="flex w-full items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 text-left shadow-sm"
               >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${item.accent}`}>{item.icon}</div>
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-2xl ${item.accent}`}>{item.iconSymbol}</div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-base font-bold text-[#16324f]">{item.title}</div>
                   <div className="mt-1 truncate text-sm text-[#70839a]">{item.description}</div>
@@ -584,7 +617,7 @@ const Home = () => {
                 }}
                 className="flex w-full items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 text-left shadow-sm"
               >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${item.accent}`}>{item.icon}</div>
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-2xl ${item.accent}`}>{item.iconSymbol}</div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-base font-bold text-[#16324f]">{item.title}</div>
                   <div className="mt-1 truncate text-sm text-[#70839a]">{item.description}</div>
@@ -612,7 +645,7 @@ const Home = () => {
                 className="flex items-center justify-between rounded-[24px] bg-[#f8fbff] px-4 py-4 text-left transition hover:bg-[#edf5fb]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-2xl">{item.icon}</div>
+                  <div className="h-9 w-9 rounded-xl bg-[#f1f7ff] flex items-center justify-center text-xl">{item.iconSymbol}</div>
                   <div>
                     <div className="font-semibold text-[#16324f]">{item.title}</div>
                     <div className="text-sm text-[#70839a]">{item.type === "restaurant" ? "Restauration" : item.type === "mobility" ? "Mobilite" : item.category === "livreur" ? "Livraison" : "Service"} • {item.area}</div>

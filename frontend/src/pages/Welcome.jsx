@@ -7,7 +7,7 @@ const roleOptions = [
     value: "client",
     label: "Client",
     title: "Je reserve une course",
-    description: "Vous accedez directement a la carte, au calcul d'itineraire et a la reservation type Yango."
+    description: "Vous accedez directement a la carte, au calcul d'itineraire et a la reservation moderne et intuitive."
   },
   {
     value: "provider",

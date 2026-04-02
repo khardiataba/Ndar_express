@@ -25,6 +25,7 @@ const rideSchema = new mongoose.Schema({
   appCommissionAmount: { type: Number, default: 0 },
   providerNetAmount: { type: Number, default: 0 },
   vehicleType: { type: String, default: "Ndar Express Classic" },
+  paymentMethod: { type: String, enum: ["Cash", "Wave", "OM", "Card"], default: "Cash" },
   distanceKm: { type: Number, default: null },
   durationMin: { type: Number, default: null },
   createdAt: { type: Date, default: Date.now }

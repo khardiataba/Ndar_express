@@ -4,13 +4,13 @@ import api from "../api"
 import BottomNav from "../components/BottomNav"
 
 const categories = [
-  { value: "menuisier", label: "Menuiserie", icon: "🪚", hint: "Portes, meubles, dressing" },
-  { value: "maçon", label: "Maconnerie", icon: "🧱", hint: "Murs, carrelage, terrasse" },
-  { value: "peintre", label: "Peinture", icon: "🎨", hint: "Finition interieure et facade" },
-  { value: "électricien", label: "Electricite", icon: "💡", hint: "Pannes et installations" },
-  { value: "pâtissier", label: "Food & Bakery", icon: "🥐", hint: "Gateaux, traiteur, livraison" },
-  { value: "coiffure-beaute", label: "Coiffure & Beaute", icon: "💇", hint: "Salon, tresses, maquillage" },
-  { value: "livreur", label: "Livraison Express", icon: "🛵", hint: "Documents, colis, courses et depots" }
+  { value: "menuisier", label: "Menuiserie", iconLabel: "WOOD", iconSymbol: "🪚", hint: "Portes, meubles, dressing" },
+  { value: "maçon", label: "Maconnerie", iconLabel: "MASON", iconSymbol: "🧱", hint: "Murs, carrelage, terrasse" },
+  { value: "peintre", label: "Peinture", iconLabel: "PAINT", iconSymbol: "🎨", hint: "Finition interieure et facade" },
+  { value: "électricien", label: "Electricite", iconLabel: "ELEC", iconSymbol: "💡", hint: "Pannes et installations" },
+  { value: "pâtissier", label: "Food & Bakery", iconLabel: "BAKE", iconSymbol: "🥐", hint: "Gateaux, traiteur, livraison" },
+  { value: "coiffure-beaute", label: "Coiffure & Beaute", iconLabel: "BEAU", iconSymbol: "💇", hint: "Salon, tresses, maquillage" },
+  { value: "livreur", label: "Livraison Express", iconLabel: "DLV", iconSymbol: "🛵", hint: "Documents, colis, courses et depots" }
 ]
 
 const Service = () => {
@@ -81,7 +81,7 @@ const Service = () => {
               <h1 className="mt-4 font-['Sora'] text-3xl font-extrabold text-white">Book a service</h1>
               <p className="mt-2 text-sm text-[#eaf3fb]">Trouvez un artisan, un resto ou un service beaute dans un parcours plus premium.</p>
             </div>
-            <div className="rounded-[26px] border border-white/10 bg-white/10 px-4 py-3 text-3xl shadow-[0_14px_30px_rgba(8,35,62,0.18)]">{selectedCategory?.icon || "✨"}</div>
+            <div className="rounded-[26px] border border-white/10 bg-white/10 px-4 py-3 text-2xl shadow-[0_14px_30px_rgba(8,35,62,0.18)]">{selectedCategory?.iconSymbol || "✨"}</div>
           </div>
           {suggestedListing && (
             <div className="mt-4 rounded-[26px] border border-white/10 bg-white/10 px-4 py-4 text-sm text-white backdrop-blur-xl">
@@ -106,7 +106,7 @@ const Service = () => {
                   item.value === category ? "border-[#1260a1] bg-[linear-gradient(180deg,#edf5fb_0%,#e3eef8_100%)]" : "border-[#e8ddd0] bg-white"
                 }`}
               >
-                <div className="text-3xl">{item.icon}</div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8effa] text-xl">{item.iconSymbol}</div>
                 <div className="mt-3 text-sm font-bold text-[#16324f]">{item.label}</div>
                 <div className="mt-1 text-xs text-[#70839a]">{item.hint}</div>
               </button>

@@ -2,10 +2,10 @@ import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 
 const navItems = [
-  { to: "/", label: "Home", icon: "⌂" },
-  { to: "/ride", label: "Courses", icon: "✦" },
-  { to: "/service", label: "Services", icon: "✚" },
-  { to: "/mybookings", label: "Mes jobs", icon: "▣" }
+  { to: "/", label: "Home", iconSymbol: "🏠" },
+  { to: "/ride", label: "Courses", iconSymbol: "🚗" },
+  { to: "/service", label: "Services", iconSymbol: "🧰" },
+  { to: "/mybookings", label: "Mes jobs", iconSymbol: "📋" }
 ]
 
 const BottomNav = () => {
@@ -26,7 +26,7 @@ const BottomNav = () => {
                 }`
               }
             >
-              <span className="text-lg leading-none">{item.icon}</span>
+              <span className="text-lg leading-none">{item.iconSymbol}</span>
               <span>{item.label}</span>
             </NavLink>
           ))}

@@ -54,7 +54,9 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data)
       return res.data
     } catch (err) {
+      console.error("fetchProfile failed:", err.debugURL || err.config?.url, err.message)
       setUser(null)
+      err.userMessage = err.userMessage || "Impossible de récupérer le profil. Vérifiez votre connexion et réessayez."
       throw err
     }
   }

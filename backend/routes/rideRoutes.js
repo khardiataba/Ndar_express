@@ -54,7 +54,7 @@ const normalizeLocation = (location) => {
 // Créer une nouvelle réservation (client)
 router.post("/", authMiddleware, requireVerified, async (req, res) => {
   try {
-    const { pickup, destination, price, vehicleType, distanceKm, durationMin } = req.body
+    const { pickup, destination, price, vehicleType, paymentMethod, distanceKm, durationMin } = req.body
     if (!pickup || !destination || !price) {
       return res.status(400).json({ message: "pickup, destination et price requis" })
     }
@@ -71,6 +71,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
       distanceKm: distanceKm || null,
       durationMin: durationMin || null,
       vehicleType: vehicleType || "Ndar Express Classic",
+      paymentMethod: paymentMethod || "Cash",
       status: "pending"
     })
 

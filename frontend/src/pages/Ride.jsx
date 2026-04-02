@@ -71,6 +71,7 @@ const Ride = () => {
   const [appCommissionAmount, setAppCommissionAmount] = useState(0)
   const [driverNetAmount, setDriverNetAmount] = useState(0)
   const [vehicleType, setVehicleType] = useState("Ndar Express Classic")
+  const [paymentMethod, setPaymentMethod] = useState("Cash")
   const [submitting, setSubmitting] = useState(false)
   const [loadingEstimate, setLoadingEstimate] = useState(false)
   const [resolvingClick, setResolvingClick] = useState(false)
@@ -219,6 +220,7 @@ const Ride = () => {
         appCommissionAmount,
         providerNetAmount: driverNetAmount,
         vehicleType,
+        paymentMethod,
         distanceKm,
         durationMin,
         routeGeometry
@@ -344,6 +346,33 @@ const Ride = () => {
                 <span className="rounded-full bg-white px-3 py-2 text-[#1260a1]">Part appli: {appCommissionPercent}% ({appCommissionAmount.toLocaleString()} F)</span>
                 <span className="rounded-full bg-white px-3 py-2 text-[#178b55]">Net chauffeur: {driverNetAmount.toLocaleString()} F</span>
               </div>
+            </div>
+
+            <div className="rounded-[24px] bg-white p-4 shadow-[0_12px_26px_rgba(8,35,62,0.08)]">
+              <div className="font-semibold text-[#16324f]">Mode de paiement</div>
+              <div className="mt-3 space-y-2">
+                {[
+                  { value: "Cash", label: "Espece (a la fin de la course)" },
+                  { value: "Wave", label: "Wave Money" },
+                  { value: "OM", label: "Orange Money" },
+                  { value: "Card", label: "Carte bancaire" }
+                ].map((option) => (
+                  <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all hover:border-[#1260a1]">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value={option.value}
+                      checked={paymentMethod === option.value}
+                      onChange={() => setPaymentMethod(option.value)}
+                      className="h-4 w-4 accent-[#1260a1]"
+                    />
+                    <span className="text-sm text-[#16324f]">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              {paymentMethod === 'Card' && (
+                <p className="mt-2 text-xs text-[#70839a]">Le paiement par carte sera géré via notre terminal sécurisé lors du passage du chauffeur ou via notre lien de paiement QR.</p>
+              )}
             </div>
 
             <div className="space-y-3">

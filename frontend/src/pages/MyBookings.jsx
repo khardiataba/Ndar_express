@@ -60,17 +60,26 @@ const MyBookings = () => {
       title: ride.vehicleType || "Ndar Express Ride",
       subtitle: `${getRideAddress(ride.pickup)} → ${getRideAddress(ride.destination)}`,
       status: ride.status || "pending",
-      meta: ride.price ? `${ride.price.toLocaleString()} FCFA` : "Tarif sur demande",
-      icon: "🚕",
+      meta: ride.price ? `${ride.price.toLocaleString()} FCFA • ${ride.paymentMethod || "Cash"}` : "Tarif sur demande",
+      iconSymbol: "🚗",
       kind: "ride"
     })),
+
     ...services.map((service) => ({
       id: service._id,
       title: service.title || `Besoin ${service.category}`,
       subtitle: service.description,
       status: service.status || "pending",
       meta: service.price ? `${service.price.toLocaleString()} FCFA` : service.category,
-      icon: service.category === "coiffure-beaute" ? "💇" : service.category === "pâtissier" ? "🥐" : "🧰",
+      iconSymbol:
+        service.category === "coiffure-beaute" ? "💇" :
+        service.category === "pâtissier" ? "🥐" :
+        service.category === "livreur" ? "🛵" :
+        service.category === "électricien" ? "💡" :
+        service.category === "maçon" ? "🧱" :
+        service.category === "peintre" ? "🎨" :
+        service.category === "menuisier" ? "🪚" :
+        "🔧",
       kind: "service"
     }))
   ]
@@ -108,7 +117,7 @@ const MyBookings = () => {
             {items.map((item) => (
               <article key={item.id} className="ndar-card rounded-[30px] p-5">
                 <div className="flex items-start gap-4">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-[20px] text-3xl ${item.kind === "ride" ? "bg-[#edf5fb]" : "bg-[#fff4df]"}`}>{item.icon}</div>
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-[20px] text-2xl ${item.kind === "ride" ? "bg-[#edf5fb]" : "bg-[#fff4df]"}`}>{item.iconSymbol}</div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h2 className="truncate font-['Sora'] text-lg font-bold text-[#16324f]">{item.title}</h2>
