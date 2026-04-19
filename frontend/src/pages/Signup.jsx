@@ -100,6 +100,7 @@ const Signup = () => {
     serviceArea: "",
     availability: "",
     beautySpecialty: "",
+    otherServiceName: "",
     vehicleBrand: "",
     vehicleType: "",
     vehiclePlate: "",
@@ -201,6 +202,12 @@ const Signup = () => {
 
     if (draft?.role === "provider" && providerDetails.serviceCategory === "Coiffure & Beaute" && !providerDetails.beautySpecialty.trim()) {
       nextErrors.beautySpecialty = "Precisez votre specialite beaute."
+    }
+
+    if ((draft?.role === "provider" && providerDetails.serviceCategory === "Autre service") || (draft?.role === "other" && providerDetails.serviceCategory === "Autre activite")) {
+      if (!providerDetails.otherServiceName.trim()) {
+        nextErrors.otherServiceName = "Precisez le nom du service."
+      }
     }
 
     if (mappedRole === "driver") {
@@ -314,7 +321,7 @@ const Signup = () => {
             Onboarding partenaire
           </div>
           <div className="mt-4 font-['Sora'] text-[40px] font-extrabold text-white">
-            Yoonbi
+            YOON WI
           </div>
           <p className="ndar-hero-copy mt-3 text-sm">
             Parcours d'inscription pour {draft.firstName} {draft.lastName} ({roleLabel}).
@@ -346,7 +353,7 @@ const Signup = () => {
 
           {step === 1 && (
             <>
-              <p className="mt-5 text-sm text-[#70839a]">
+              <p className="mt-5 text-sm text-[#5a8fd1]">
                 {mappedRole === "client"
                   ? "Renseignez vos informations de connexion."
                   : "Renseignez vos informations, votre zone, votre disponibilite et vos donnees professionnelles avant de passer aux documents."}
@@ -355,17 +362,17 @@ const Signup = () => {
               <div className="mt-6 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Prenom</label>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#5a8fd1]">Prenom</label>
                     <input value={draft.firstName} disabled className="w-full rounded-2xl border border-[#d7e5f1] bg-[#edf5fb] px-4 py-3 text-[#165c96] outline-none" />
                   </div>
                   <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Nom</label>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#5a8fd1]">Nom</label>
                     <input value={draft.lastName} disabled className="w-full rounded-2xl border border-[#d7e5f1] bg-[#edf5fb] px-4 py-3 text-[#165c96] outline-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Email</label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#5a8fd1]">Email</label>
                   <input value={email} onChange={(event) => { setEmail(event.target.value); clearFieldError("email") }} type="email" placeholder="nom@email.com" required className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]" />
                   {errors.email && <div className="mt-2 text-sm text-[#c45860]">{errors.email}</div>}
                 </div>
@@ -403,6 +410,14 @@ const Signup = () => {
                       <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Specialite beaute</label>
                       <input value={providerDetails.beautySpecialty} onChange={(event) => updateProviderField("beautySpecialty", event.target.value)} placeholder="Ex: tresses, make-up, soins visage" className="w-full rounded-2xl border border-[#dce7f0] bg-white px-4 py-3 outline-none focus:border-[#1260a1]" />
                       {errors.beautySpecialty && <div className="mt-2 text-sm text-[#c45860]">{errors.beautySpecialty}</div>}
+                    </div>
+                  )}
+
+                  {((draft?.role === "provider" && providerDetails.serviceCategory === "Autre service") || (draft?.role === "other" && providerDetails.serviceCategory === "Autre activite")) && (
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Preciser le service</label>
+                      <input value={providerDetails.otherServiceName} onChange={(event) => updateProviderField("otherServiceName", event.target.value)} placeholder="Ex: traduction, reparation, etc." className="w-full rounded-2xl border border-[#dce7f0] bg-white px-4 py-3 outline-none focus:border-[#1260a1]" />
+                      {errors.otherServiceName && <div className="mt-2 text-sm text-[#c45860]">{errors.otherServiceName}</div>}
                     </div>
                   )}
 

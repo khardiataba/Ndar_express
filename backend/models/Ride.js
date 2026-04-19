@@ -50,7 +50,7 @@ const rideSchema = new mongoose.Schema({
   appCommissionPercent: { type: Number, default: 12 },
   appCommissionAmount: { type: Number, default: 0 },
   providerNetAmount: { type: Number, default: 0 },
-  vehicleType: { type: String, default: "YOONBI Classic" },
+  vehicleType: { type: String, default: "YOON WI Classic" },
   paymentMethod: { type: String, enum: ["Cash", "Wave", "OM", "Card"], default: "Cash" },
   distanceKm: { type: Number, default: null },
   durationMin: { type: Number, default: null },
@@ -59,5 +59,11 @@ const rideSchema = new mongoose.Schema({
   safetyReports: { type: [safetyReportSchema], default: [] },
   createdAt: { type: Date, default: Date.now }
 })
+
+// Add indexes for performance
+rideSchema.index({ userId: 1, createdAt: -1 })
+rideSchema.index({ driverId: 1, status: 1 })
+rideSchema.index({ status: 1, createdAt: -1 })
+rideSchema.index({ userId: 1, status: 1 })
 
 module.exports = mongoose.model("Ride", rideSchema)

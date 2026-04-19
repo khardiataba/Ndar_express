@@ -523,13 +523,13 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
             {theme.badge}
           </div>
           <div className="mt-4 font-['Sora'] text-3xl font-extrabold text-[#16324f]">{theme.title}</div>
-          <p className="mt-2 text-sm text-[#70839a]">{theme.subtitle}</p>
+          <p className="mt-2 text-sm text-[#5a8fd1]">{theme.subtitle}</p>
           <p className="mt-2 text-sm text-[#70839a]">
             {theme.intro} Domaine actif: {providerFamilyLabel.toLowerCase()}.
           </p>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button onClick={() => navigate("/service")} className="rounded-[22px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-4 text-left text-white shadow-[0_16px_30px_rgba(8,35,62,0.16)]">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Action</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd700]">Action</div>
               <div className="mt-2 font-['Sora'] text-lg font-bold">Nouvelle demande</div>
             </button>
             <button onClick={() => navigate("/mybookings")} className="rounded-[22px] bg-[linear-gradient(180deg,#edf5fb_0%,#e4eef7_100%)] px-4 py-4 text-left text-[#16324f]">
@@ -543,19 +543,19 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-4">
             <div className="rounded-[22px] bg-white/70 px-4 py-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Demandes</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Demandes</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-[#16324f]">{workflowStats.total}</div>
             </div>
             <div className="rounded-[22px] bg-white/70 px-4 py-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Devis envoyes</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Devis envoyes</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-[#8b6d2f]">{workflowStats.quoted}</div>
             </div>
             <div className="rounded-[22px] bg-white/70 px-4 py-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">A valider</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">A valider</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-[#1260a1]">{workflowStats.accepted}</div>
             </div>
             <div className="rounded-[22px] bg-white/70 px-4 py-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">En cours</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">En cours</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-[#178b55]">{workflowStats.inProgress}</div>
             </div>
           </div>
@@ -570,13 +570,13 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                 Localisation prestataire
               </div>
               <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Mettre a jour ma position</h2>
-              <p className="mt-2 text-sm text-[#70839a]">
+              <p className="mt-2 text-sm text-[#5a8fd1]">
                 Les clients verront votre zone et votre position approximative pour choisir le prestataire le plus proche ou le plus qualifie.
               </p>
 
               <div className="mt-4 space-y-3">
                 <div>
-                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Zone de couverture</label>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Zone de couverture</label>
                   <select
                     value={locationDraft.serviceArea || ""}
                     onChange={(event) => updateLocationDraft("serviceArea", event.target.value)}
@@ -630,7 +630,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
             <section className="ndar-card rounded-[30px] p-5">
               <div className="mb-4">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Mes revenus</h2>
-                <p className="text-sm text-[#70839a]">Vue rapide de vos gains, de la part appliquee et de votre net.</p>
+                <p className="text-sm text-[#5a8fd1]">Vue rapide de vos gains, de la part appliquee et de votre net.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[24px] bg-[linear-gradient(180deg,#edf5fb_0%,#e3eef8_100%)] p-4">
@@ -648,11 +648,11 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Aujourd'hui</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]\">Aujourd'hui</div>
                   <div className="mt-2 font-semibold text-[#16324f]">{revenue.todayNet.toLocaleString()} F net</div>
                 </div>
                 <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">7 derniers jours</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]\">7 derniers jours</div>
                   <div className="mt-2 font-semibold text-[#16324f]">{revenue.weekNet.toLocaleString()} F net</div>
                 </div>
               </div>
@@ -661,11 +661,11 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
             <section className="ndar-card rounded-[30px] p-5">
               <div className="mb-4">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">{theme.availableTitle}</h2>
-                <p className="text-sm text-[#70839a]">{theme.availableCopy}</p>
+                <p className="text-sm text-[#5a8fd1]">{theme.availableCopy}</p>
               </div>
 
               {available.length === 0 ? (
-                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">Aucune demande disponible pour le moment.</div>
+                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#5a8fd1]">Aucune demande disponible pour le moment.</div>
               ) : (
                 <div className="space-y-3">
                   {available.map((req) => (
@@ -675,7 +675,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                           <div className="font-semibold capitalize text-[#16324f]">{req.serviceFamilyLabel || providerFamilyLabel}</div>
                           <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#70839a]">{req.category}</div>
                           <div className="mt-1 text-sm text-[#70839a]">{req.title || req.description}</div>
-                          <div className="mt-2 text-xs text-[#70839a]">Le client décrit son besoin. C'est au prestataire de fixer le prix du devis.</div>
+                          <div className="mt-2 text-xs text-[#5a8fd1]">Le client décrit son besoin. C'est au prestataire de fixer le prix du devis.</div>
                           {req.status === "quoted" && req.quotedPrice > 0 && (
                             <div className="mt-3 rounded-[18px] bg-[#fff7eb] px-4 py-3 text-sm text-[#8b6d2f]">
                               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a7a24]">Devis en attente</div>
@@ -695,7 +695,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                       </div>
                       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                         <div>
-                          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Prix proposé</label>
+                          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Prix proposé</label>
                           <input
                             value={quoteDraftById[req._id]?.quotedPrice || ""}
                             onChange={(event) => updateQuoteDraft(req._id, "quotedPrice", event.target.value)}
@@ -707,7 +707,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                           />
                         </div>
                         <div>
-                          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Note devis</label>
+                          <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Note devis</label>
                           <input
                             value={quoteDraftById[req._id]?.quoteNote || ""}
                             onChange={(event) => updateQuoteDraft(req._id, "quoteNote", event.target.value)}
@@ -728,11 +728,11 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
             <section className="ndar-card rounded-[30px] p-5">
               <div className="mb-4">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">{theme.missionTitle}</h2>
-                <p className="text-sm text-[#70839a]">{theme.missionCopy}</p>
+                <p className="text-sm text-[#5a8fd1]">{theme.missionCopy}</p>
               </div>
 
               {myRequests.length === 0 ? (
-                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">Aucune mission pour le moment.</div>
+                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#5a8fd1]">Aucune mission pour le moment.</div>
               ) : (
                 <div className="space-y-3">
                   {myRequests.map((req) => (
@@ -756,7 +756,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                           </div>
                           <div className="mt-2 text-xs font-semibold text-[#70839a]">Contribution app: {req.platformContributionStatus || "due"}</div>
                           {req.platformContributionReference && (
-                            <div className="mt-1 text-xs text-[#70839a]">Ref: {req.platformContributionReference}</div>
+                            <div className="mt-1 text-xs text-[#5a8fd1]">Ref: {req.platformContributionReference}</div>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
@@ -771,7 +771,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                         <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#fff7eb_0%,#fff1db_100%)] p-4">
                           <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                             <div>
-                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Code de sécurité client</label>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Code de sécurité client</label>
                               <input
                                 value={safetyDraftById[req._id]?.safetyCode || ""}
                                 onChange={(event) => updateSafetyDraft(req._id, event.target.value)}
@@ -801,10 +801,10 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                       )}
 
                       {req.platformContributionStatus !== "paid" && (req.status === "accepted" || req.status === "in_progress") && (
-                          <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#f8fbff_0%,#eef5fb_100%)] p-4">
+                          <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#f8fbff_0%,#f3f8fc_100%)] p-4">
                           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
                             <div>
-                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Mode de paiement</label>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Mode de paiement</label>
                               <select
                                 value={paymentDraftById[req._id]?.paymentMethod || "Wave"}
                                 onChange={(event) => updatePaymentDraft(req._id, "paymentMethod", event.target.value)}
@@ -816,7 +816,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                               </select>
                             </div>
                             <div>
-                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Reference</label>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Reference</label>
                               <input
                                 value={paymentDraftById[req._id]?.reference || ""}
                                 onChange={(event) => updatePaymentDraft(req._id, "reference", event.target.value)}
@@ -825,7 +825,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                               />
                             </div>
                             <div>
-                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Montant contribution</label>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Montant contribution</label>
                               <input
                                 value={paymentDraftById[req._id]?.amountPaid || ""}
                                 onChange={(event) => updatePaymentDraft(req._id, "amountPaid", event.target.value)}

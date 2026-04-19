@@ -3,11 +3,19 @@ import { useNavigate } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
 
+// Map backend statuses to tracking steps
+const statusToStage = {
+  "pending": 0,      // Course confirmée
+  "accepted": 1,     // Chauffeur en approche
+  "ongoing": 2,      // Prise en charge
+  "completed": 3     // Arrivée à destination
+}
+
 const trackingSteps = [
-  { key: "confirmed", label: "Course confirmee" },
-  { key: "driver", label: "Chauffeur en approche" },
-  { key: "pickup", label: "Prise en charge" },
-  { key: "dropoff", label: "Arrivee a destination" }
+  { key: "pending", label: "Course confirmee", status: "pending" },
+  { key: "accepted", label: "Chauffeur en approche", status: "accepted" },
+  { key: "ongoing", label: "Prise en charge", status: "ongoing" },
+  { key: "completed", label: "Arrivee a destination", status: "completed" }
 ]
 
 const RideTracking = () => {
@@ -17,7 +25,6 @@ const RideTracking = () => {
   const [error, setError] = useState(null)
   const [statusMessage, setStatusMessage] = useState("")
   const [sendingAlert, setSendingAlert] = useState(false)
-  const [trackingStage, setTrackingStage] = useState(1)
   const [syncedRideId, setSyncedRideId] = useState(null)
 
   useEffect(() => {
@@ -64,24 +71,45 @@ const RideTracking = () => {
     }
   }, [ride, syncedRideId])
 
+  // Listen to real-time Socket.io events
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDriverPosition((current) => ({
-        lat: current.lat - 0.00008,
-        lng: current.lng + 0.00006
-      }))
-    }, 2600)
+    const handleLocationUpdate = (event) => {
+      const data = event.detail
+      if (data?.location) {
+        setDriverPosition({
+          lat: data.location.lat || driverPosition.lat,
+          lng: data.location.lng || driverPosition.lng
+        })
+      }
+    }
 
-    return () => clearInterval(interval)
-  }, [])
+    const handleStatusUpdate = (event) => {
+      const data = event.detail
+      if (data?.rideId === (ride?._id || ride?.rideId || ride?.id)) {
+        // Update ride with new status
+        setRide((prev) => ({
+          ...prev,
+          ...data,
+          rideId: data.rideId || prev.rideId
+        }))
+        localStorage.setItem("currentRide", JSON.stringify({
+          ...ride,
+          ...data
+        }))
+      }
+    }
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTrackingStage((current) => Math.min(current + 1, trackingSteps.length - 1))
-    }, 9000)
+    window.addEventListener('driver:location-update', handleLocationUpdate)
+    window.addEventListener('ride:status-update', handleStatusUpdate)
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => {
+      window.removeEventListener('driver:location-update', handleLocationUpdate)
+      window.removeEventListener('ride:status-update', handleStatusUpdate)
+    }
+  }, [ride])
+
+  // No more automatic simulation - tracking stage comes from real ride status
+  const trackingStage = statusToStage[ride?.status] ?? 0
 
   const eta = ride?.durationMin ? `Arrivee estimee dans ${Math.max(1, ride.durationMin - 2)} min` : "Arrivee estimee dans 4 min"
   const currentStep = trackingSteps[trackingStage]
@@ -100,7 +128,7 @@ const RideTracking = () => {
   }
 
   const shareTrip = async () => {
-    const summary = `Ma course Yoonbi
+    const summary = `Ma course YOON WI
 Départ: ${ride?.pickup?.name || ride?.pickup?.address || "Position actuelle"}
 Destination: ${ride?.destination?.name || ride?.destination?.address || "Destination"}
 Code PIN: ${safetyCode}`
@@ -108,7 +136,7 @@ Code PIN: ${safetyCode}`
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Course Yoonbi",
+          title: "Course YOON WI",
           text: summary
         })
       } else {
@@ -179,7 +207,7 @@ Code PIN: ${safetyCode}`
               </p>
             </div>
             <div className="rounded-[24px] bg-[linear-gradient(180deg,#edf5fb_0%,#dfeefa_100%)] px-5 py-4 text-center shadow-[0_12px_28px_rgba(8,35,62,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#70839a]">PIN</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5a8fd1]">PIN</div>
               <div className="mt-2 font-['Sora'] text-3xl font-extrabold tracking-[0.25em] text-[#1260a1]">{safetyCode}</div>
             </div>
           </div>
@@ -239,32 +267,32 @@ Code PIN: ${safetyCode}`
               <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Trip summary</h2>
             </div>
             <div className="rounded-[24px] bg-[linear-gradient(180deg,#edf5fb_0%,#dfeefa_100%)] px-4 py-3 text-right">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Prix</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Prix</div>
               <div className="mt-1 font-['Sora'] text-lg font-bold text-[#1260a1]">{ridePrice}</div>
             </div>
           </div>
           {error && <div className="mt-4 rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">{error}</div>}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-[26px] bg-[linear-gradient(180deg,#fffdfa_0%,#f7f0e5_100%)] p-4 shadow-[0_12px_28px_rgba(8,35,62,0.06)]">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#70839a]">Depart</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#5a8fd1]">Depart</div>
               <div className="mt-2 font-semibold text-[#16324f]">{ride?.pickup?.name || ride?.pickup?.address || "Position actuelle"}</div>
             </div>
             <div className="rounded-[26px] bg-[linear-gradient(180deg,#fffdfa_0%,#f7f0e5_100%)] p-4 shadow-[0_12px_28px_rgba(8,35,62,0.06)]">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#70839a]">Destination</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#5a8fd1]">Destination</div>
               <div className="mt-2 font-semibold text-[#16324f]">{ride?.destination?.name || ride?.destination?.address || "Destination"}</div>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#70839a]">Distance</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a8fd1]">Distance</div>
               <div className="mt-2 font-['Sora'] text-base font-bold text-[#16324f]">{ride?.distanceKm ? `${ride.distanceKm} km` : "--"}</div>
             </div>
             <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#70839a]">Duree</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a8fd1]">Duree</div>
               <div className="mt-2 font-['Sora'] text-base font-bold text-[#16324f]">{ride?.durationMin ? `${ride.durationMin} min` : "--"}</div>
             </div>
             <div className="rounded-[24px] bg-[linear-gradient(180deg,#e7f1f9_0%,#dcebf8_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#70839a]">Chauffeur</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a8fd1]">Chauffeur</div>
               <div className="mt-2 font-['Sora'] text-base font-bold text-[#1260a1]">En route</div>
             </div>
           </div>

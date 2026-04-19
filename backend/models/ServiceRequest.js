@@ -98,4 +98,10 @@ const ServiceRequestSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+// Add indexes for performance
+ServiceRequestSchema.index({ clientId: 1, createdAt: -1 })
+ServiceRequestSchema.index({ technicianId: 1, status: 1 })
+ServiceRequestSchema.index({ status: 1, createdAt: -1 })
+ServiceRequestSchema.index({ category: 1, status: 1 })
+
 module.exports = mongoose.model("ServiceRequest", ServiceRequestSchema)

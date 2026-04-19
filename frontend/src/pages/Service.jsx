@@ -282,11 +282,11 @@ const Service = () => {
 
             <div className="grid grid-cols-2 gap-3 rounded-[28px] border border-white/10 bg-white/10 p-4 text-white backdrop-blur">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d6e7f5]">Zone</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Zone</div>
                 <div className="mt-2 font-['Sora'] text-lg font-bold">{clientLocation.address || "Saint-Louis"}</div>
               </div>
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d6e7f5]">Disponibles</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Disponibles</div>
                 <div className="mt-2 font-['Sora'] text-lg font-bold">{filteredProviders.length}</div>
               </div>
             </div>

@@ -67,6 +67,11 @@ class SocketManager {
         this.handleDriverLocationUpdate(socket, data);
       });
 
+      // Handle passenger location updates
+      socket.on('passenger:location-update', (data) => {
+        this.handlePassengerLocationUpdate(socket, data);
+      });
+
       // Handle driver status change
       socket.on('driver:status-change', (data) => {
         this.handleDriverStatusChange(socket, data);
@@ -131,6 +136,45 @@ class SocketManager {
         heading,
         speed
       });
+    }
+  }
+
+  async handlePassengerLocationUpdate(socket, data) {
+    const { rideId, latitude, longitude, address } = data;
+
+    if (!rideId) return;
+
+    try {
+      const Ride = require('../models/Ride');
+      const ride = await Ride.findById(rideId);
+
+      if (!ride) return;
+
+      // Only allow passenger to update their own ride
+      if (String(ride.userId) !== String(socket.userId)) return;
+
+      // Update the pickup location with current position
+      ride.pickup = {
+        name: address || ride.pickup?.name || 'Position actuelle',
+        address: address || ride.pickup?.address || 'Position actuelle',
+        lat: latitude,
+        lng: longitude
+      };
+
+      await ride.save();
+
+      // Notify the driver about passenger location update
+      const driverSocketId = this.connectedUsers.get(String(ride.driverId));
+      if (driverSocketId) {
+        this.io.to(driverSocketId).emit('passenger:location-update', {
+          rideId: ride._id,
+          location: { lat: latitude, lng: longitude },
+          address: address || 'Position actuelle',
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour position passager:', error);
     }
   }
 

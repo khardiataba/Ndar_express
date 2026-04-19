@@ -48,8 +48,9 @@ const DriverDashboard = () => {
     try {
       setActionError(null)
       setActionMessage(null)
-      await api.patch(`/rides/${id}/accept`)
-      fetchRides()
+      const res = await api.patch(`/rides/${id}/accept`)
+      // Redirect to tracking page
+      navigate(`/tracking/${id}`, { state: { ride: res.data } })
     } catch (err) {
       setError(err.response?.data?.message || "Impossible d'accepter")
     }
@@ -141,10 +142,10 @@ const DriverDashboard = () => {
       <div className="ndar-shell space-y-4">
         <header className="ndar-card rounded-[34px] p-6">
           <div className="font-['Sora'] text-3xl font-extrabold text-[#16324f]">Dashboard Chauffeur</div>
-          <p className="mt-2 text-sm text-[#70839a]">Suivez les courses disponibles et vos trajets en cours avec une vue plus claire.</p>
+          <p className="mt-2 text-sm text-[#5a8fd1]">Suivez les courses disponibles et vos trajets en cours avec une vue plus claire.</p>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button onClick={() => navigate("/ride")} className="rounded-[22px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-4 text-left text-white shadow-[0_16px_30px_rgba(8,35,62,0.16)]">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Action</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ffd700]">Action</div>
               <div className="mt-2 font-['Sora'] text-lg font-bold">Nouvelle course</div>
             </button>
             <button onClick={() => navigate("/mybookings")} className="rounded-[22px] bg-[linear-gradient(180deg,#edf5fb_0%,#e4eef7_100%)] px-4 py-4 text-left text-[#16324f]">
@@ -175,7 +176,7 @@ const DriverDashboard = () => {
             <section className="ndar-card rounded-[30px] p-5">
               <div className="mb-4">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Mes revenus</h2>
-                <p className="text-sm text-[#70839a]">Vue rapide de ce que vous gardez et de ce qui revient a l'application.</p>
+                <p className="text-sm text-[#5a8fd1]">Vue rapide de ce que vous gardez et de ce qui revient a l'application.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[24px] bg-[linear-gradient(180deg,#edf5fb_0%,#e3eef8_100%)] p-4">
@@ -193,11 +194,11 @@ const DriverDashboard = () => {
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Aujourd'hui</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Aujourd'hui</div>
                   <div className="mt-2 font-semibold text-[#16324f]">{revenue.todayNet.toLocaleString()} F net</div>
                 </div>
                 <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_22px_rgba(8,35,62,0.06)]">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">7 derniers jours</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">7 derniers jours</div>
                   <div className="mt-2 font-semibold text-[#16324f]">{revenue.weekNet.toLocaleString()} F net</div>
                 </div>
               </div>
@@ -207,13 +208,13 @@ const DriverDashboard = () => {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Courses disponibles</h2>
-                  <p className="text-sm text-[#70839a]">{available.length} course(s) en attente autour de vous.</p>
+                  <p className="text-sm text-[#5a8fd1]">{available.length} course(s) en attente autour de vous.</p>
                 </div>
                 <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-xs font-bold text-[#165c96]">Live</span>
               </div>
 
               {available.length === 0 ? (
-                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">Aucune course disponible pour le moment.</div>
+                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#5a8fd1]">Aucune course disponible pour le moment.</div>
               ) : (
                 <div className="space-y-3">
                   {available.map((ride) => (
@@ -221,8 +222,8 @@ const DriverDashboard = () => {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold text-[#16324f]">{ride.vehicleType}</div>
-                          <div className="mt-1 text-sm text-[#70839a]">{formatRideLabel(ride)}</div>
-                          <div className="mt-2 flex gap-3 text-xs text-[#70839a]">
+                          <div className="mt-1 text-sm text-[#5a8fd1]">{formatRideLabel(ride)}</div>
+                          <div className="mt-2 flex gap-3 text-xs text-[#5a8fd1]">
                             <span>{ride.distanceKm ? `${ride.distanceKm} km` : "Distance en calcul"}</span>
                             <span>{ride.durationMin ? `${ride.durationMin} min` : "Temps estime"}</span>
                           </div>
@@ -245,11 +246,11 @@ const DriverDashboard = () => {
             <section className="ndar-card rounded-[30px] p-5">
               <div className="mb-4">
                 <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Mes courses</h2>
-                <p className="text-sm text-[#70839a]">Historique de vos prises en charge.</p>
+                <p className="text-sm text-[#5a8fd1]">Historique de vos prises en charge.</p>
               </div>
 
               {myRides.length === 0 ? (
-                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">Aucune course acceptee pour le moment.</div>
+                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#5a8fd1]">Aucune course acceptee pour le moment.</div>
               ) : (
                 <div className="space-y-3">
                   {myRides.map((ride) => (
@@ -257,7 +258,7 @@ const DriverDashboard = () => {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="font-semibold text-[#16324f]">{ride.vehicleType}</div>
-                          <div className="mt-1 text-sm text-[#70839a]">{formatRideLabel(ride)}</div>
+                          <div className="mt-1 text-sm text-[#5a8fd1]">{formatRideLabel(ride)}</div>
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
                             <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Commission appli: {ride.appCommissionPercent || 12}% ({(ride.appCommissionAmount || 0).toLocaleString()} F)</span>
                             <span className="rounded-full bg-[#eefaf2] px-3 py-2 text-[#178b55]">Net chauffeur: {(ride.providerNetAmount || Math.max(0, (ride.price || 0) - (ride.appCommissionAmount || 0))).toLocaleString()} F</span>
@@ -290,7 +291,7 @@ const DriverDashboard = () => {
                               {busyRideId === ride._id ? "Vérification..." : "Démarrer"}
                             </button>
                           </div>
-                          <p className="mt-2 text-xs text-[#70839a]">
+                          <p className="mt-2 text-xs text-[#5a8fd1]\">
                             La course ne peut commencer que si le PIN transmis par le client est correct.
                           </p>
                         </div>

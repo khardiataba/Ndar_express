@@ -3,9 +3,12 @@ const crypto = require("crypto")
 const https = require("https")
 const Ride = require("../models/Ride")
 const User = require("../models/User")
+const socketManager = require("../socket/socketManager")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
 const { computeRideFare, rideCommission } = require("../utils/pricing")
 const { createNotification } = require("../services/notificationService")
+const { getPaginationParams, buildPaginatedResponse } = require("../utils/pagination")
+const { validateLocationPair } = require("../utils/locationValidation")
 
 const router = express.Router()
 
@@ -159,19 +162,30 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
       return res.status(400).json({ message: "pickup, destination et price requis" })
     }
 
+    // Validate locations
+    const locationValidation = validateLocationPair(pickup, destination)
+    if (!locationValidation.valid) {
+      return res.status(400).json({ message: "Localisation invalide", errors: locationValidation.errors })
+    }
+
+    // Validate price
+    if (typeof price !== 'number' || price <= 0 || price > 1000000) {
+      return res.status(400).json({ message: "Prix invalide" })
+    }
+
     const finalPrice = computeRideFare(distanceKm, durationMin)
     const commission = rideCommission(finalPrice)
     const safetyCode = generateSafetyCode()
 
     const ride = await Ride.create({
       userId: req.user._id,
-      pickup: normalizeLocation(pickup),
-      destination: normalizeLocation(destination),
+      pickup: locationValidation.pickup,
+      destination: locationValidation.destination,
       price: finalPrice,
       ...commission,
-      distanceKm: distanceKm || null,
+      distanceKm: locationValidation.distanceKm || distanceKm || null,
       durationMin: durationMin || null,
-      vehicleType: vehicleType || "YOONBI Classic",
+      vehicleType: vehicleType || "YOON WI Classic",
       paymentMethod: paymentMethod || "Cash",
       safetyCode,
       status: "pending"
@@ -196,7 +210,13 @@ router.post("/estimate", authMiddleware, requireVerified, async (req, res) => {
       return res.status(400).json({ message: "pickup et destination requis" })
     }
 
-    const coords = `${pickup.lng},${pickup.lat};${destination.lng},${destination.lat}`
+    // Validate locations
+    const locationValidation = validateLocationPair(pickup, destination)
+    if (!locationValidation.valid) {
+      return res.status(400).json({ message: "Localisation invalide", errors: locationValidation.errors })
+    }
+
+    const coords = `${locationValidation.pickup.lng},${locationValidation.pickup.lat};${locationValidation.destination.lng},${locationValidation.destination.lat}`
     const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`
     const fallbackEstimate = buildFallbackEstimate(pickup, destination)
 
@@ -245,6 +265,33 @@ router.get("/", authMiddleware, requireVerified, async (req, res) => {
     const filter = role === "driver" ? { driverId: _id } : { userId: _id }
     const rides = await Ride.find(filter).sort({ createdAt: -1 })
     return res.json(await Promise.all(rides.map((ride) => serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+// Get single ride by ID
+router.get("/:id", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { id } = req.params
+    const ride = await Ride.findById(id).populate('userId', 'name phone email profilePhoto').populate('driverId', 'name profilePhoto phone email')
+    
+    if (!ride) {
+      return res.status(404).json({ message: "Course non trouvée" })
+    }
+
+    // Check authorization
+    const isClient = ride.userId._id.toString() === req.user._id.toString()
+    const isDriver = ride.driverId?._id.toString() === req.user._id.toString()
+    const isAdmin = req.user.role === 'admin'
+    
+    if (!isClient && !isDriver && !isAdmin) {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    const serialized = await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role })
+    return res.json(serialized)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
@@ -302,9 +349,20 @@ router.patch(
         link: `/ride/${ride._id}`
       })
 
-
-    const includeSafetyCode = String(ride.userId || "") === String(req.user._id || "")
-    return res.json(await serializeRide(ride, { includeSafetyCode, viewerUserId: req.user._id, viewerRole: req.user.role }))
+      // Emit socket event for real-time update
+      socketManager.emitToUser(ride.userId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'accepted',
+        driverId: ride.driverId,
+        timestamp: new Date()
+      })
+      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'accepted',
+        message: 'Course acceptée avec succès',
+        timestamp: new Date()
+      })
+    return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
@@ -347,6 +405,81 @@ router.patch(
         message: 'Le chauffeur a démarré votre course. Bon voyage !',
         category: 'success',
         link: `/ride/${ride._id}`
+      })
+
+      // Emit socket event for real-time update
+      socketManager.emitToUser(ride.userId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'ongoing',
+        message: 'Course démarrée',
+        timestamp: new Date()
+      })
+      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'ongoing',
+        message: 'Course démarrée avec succès',
+        timestamp: new Date()
+      })
+
+      return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ message: "Erreur serveur" })
+    }
+  }
+)
+
+router.patch(
+  "/:id/complete",
+  authMiddleware,
+  requireVerified,
+  async (req, res) => {
+    try {
+      const ride = await Ride.findById(req.params.id)
+
+      if (!ride) {
+        return res.status(404).json({ message: "Course non trouvée" })
+      }
+
+      if (String(ride.driverId || "") !== String(req.user._id || "") && String(ride.userId || "") !== String(req.user._id || "")) {
+        return res.status(403).json({ message: "Cette course ne vous concerne pas" })
+      }
+
+      if (ride.status !== "ongoing") {
+        return res.status(400).json({ message: "Seules les courses en cours peuvent etre terminees" })
+      }
+
+      ride.status = "completed"
+      await ride.save()
+
+      await createNotification({
+        userId: ride.userId,
+        title: 'Course terminée',
+        message: 'Vous êtes arrivé à destination. Merci d\'avoir utilisé YOON WI !',
+        category: 'success',
+        link: `/ride/${ride._id}`
+      })
+
+      await createNotification({
+        userId: ride.driverId,
+        title: 'Course terminée',
+        message: 'Course complètement. Vous pouvez maintenant accepter une nouvelle course.',
+        category: 'success',
+        link: `/ride/${ride._id}`
+      })
+
+      // Emit socket event for real-time update
+      socketManager.emitToUser(ride.userId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'completed',
+        message: 'Course terminée',
+        timestamp: new Date()
+      })
+      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
+        rideId: ride._id,
+        status: 'completed',
+        message: 'Course terminée',
+        timestamp: new Date()
       })
 
       return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))

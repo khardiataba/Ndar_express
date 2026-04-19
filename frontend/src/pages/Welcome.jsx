@@ -55,7 +55,7 @@ const Welcome = () => {
             Mobilite + services a Saint-Louis
           </div>
           <div className="mt-4 font-['Sora'] text-[42px] font-extrabold text-white">
-            Yoonbi
+            YOON WI
           </div>
           <p className="mt-3 text-sm text-[#eaf3fb]">
             Une experience plus rapide, plus claire et plus elegante pour bouger, commander et proposer vos services.
@@ -77,7 +77,7 @@ const Welcome = () => {
         <section className="ndar-card rounded-[38px] p-6">
           <div className="ndar-chip">Demarrage rapide</div>
           <h1 className="mt-4 font-['Sora'] text-3xl font-extrabold text-[#16324f]">Bienvenue a bord</h1>
-          <p className="mt-2 text-sm text-[#70839a]">Commencez par votre identite et choisissez votre parcours dans l'app.</p>
+          <p className="mt-2 text-sm text-[#5a8fd1]">Commencez par votre identite et choisissez votre parcours dans l'app.</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <input
@@ -113,7 +113,7 @@ const Welcome = () => {
                     {option.value === "client" ? "🚕" : option.value === "provider" ? "🧰" : option.value === "driver" ? "🚘" : "🧩"}
                   </div>
                 </div>
-                <p className="mt-2 text-sm text-[#70839a]">{option.description}</p>
+                <p className="mt-2 text-sm text-[#5a8fd1]">{option.description}</p>
               </button>
             ))}
           </div>
@@ -128,7 +128,7 @@ const Welcome = () => {
             Continuer
           </button>
 
-          <p className="mt-5 text-sm text-[#70839a]">
+          <p className="mt-5 text-sm text-[#5a8fd1]">
             Vous avez deja un compte ? <Link to="/login" className="font-semibold text-[#165c96]">Connexion</Link>
           </p>
         </section>

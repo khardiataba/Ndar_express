@@ -1,8 +1,9 @@
 // backend/routes/paymentRoutes.js
-const express = require('express');
-const router = express.Router();
-const paymentService = require('../services/paymentService');
-const { authMiddleware } = require('../middleware/auth');
+const express = require('express')
+const router = express.Router()
+const paymentService = require('../services/paymentService')
+const atomicPaymentService = require('../services/atomicPaymentService')
+const { authMiddleware } = require('../middleware/auth')
 
 // Obtenir le solde du wallet
 router.get('/wallet/balance', authMiddleware, async (req, res) => {
@@ -85,33 +86,77 @@ router.post('/wallet/auto-recharge', authMiddleware, async (req, res) => {
 // Traiter le paiement d'une course
 router.post('/ride/:rideId/pay', authMiddleware, async (req, res) => {
   try {
-    const { rideId } = req.params;
-    const userId = req.user.id;
+    const { rideId } = req.params
+    const userId = req.user._id
+    const Ride = require('../models/Ride')
 
-    // Vérifier que l'utilisateur est le passager de la course
-    const Ride = require('../models/Ride');
-    const ride = await Ride.findById(rideId);
+    // Validate ride ID
+    if (!rideId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'ID de course invalide' })
+    }
 
+    // Fetch ride
+    const ride = await Ride.findById(rideId)
     if (!ride) {
-      return res.status(404).json({ message: 'Course non trouvée' });
+      return res.status(404).json({ message: 'Course non trouvée' })
     }
 
-    if (ride.passenger.toString() !== userId) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+    // Check ownership
+    if (ride.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Accès non autorisé' })
     }
 
-    const result = await paymentService.processRidePayment(rideId);
-
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(result.currentBalance !== undefined ? 402 : 400).json(result);
+    // Check ride status
+    if (ride.status !== 'completed') {
+      return res.status(400).json({ message: 'La course doit être terminée avant le paiement' })
     }
+
+    // Validate price
+    if (!ride.price || ride.price <= 0) {
+      return res.status(400).json({ message: 'Prix invalide' })
+    }
+
+    // Atomic debit
+    const result = await atomicPaymentService.atomicDebit(userId, ride.price, {
+      description: `Paiement course ${rideId}`,
+      reference: rideId,
+      referenceType: 'ride',
+      paymentMethod: ride.paymentMethod || 'wallet'
+    })
+
+    if (!result.success) {
+      return res.status(402).json(result)
+    }
+
+    // Credit driver
+    if (ride.driverId) {
+      const driverCommission = ride.appCommissionAmount || 0
+      const driverAmount = ride.price - driverCommission
+      
+      await atomicPaymentService.atomicCredit(ride.driverId, driverAmount, {
+        description: `Paiement course ${rideId}`,
+        reference: rideId,
+        referenceType: 'ride',
+        paymentMethod: 'wallet'
+      })
+    }
+
+    // Update ride payment status
+    ride.status = 'paid'
+    await ride.save()
+
+    return res.json({
+      success: true,
+      message: 'Paiement effectué avec succès',
+      newBalance: result.newBalance,
+      amount: ride.price,
+      transactionId: result.transactionId
+    })
   } catch (error) {
-    console.error('Erreur route pay ride:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    console.error('Payment error:', error)
+    res.status(500).json({ message: 'Erreur serveur' })
   }
-});
+})
 
 // Traiter le paiement d'un service
 router.post('/service/:serviceRequestId/pay', authMiddleware, async (req, res) => {
@@ -165,6 +210,49 @@ router.post('/refund/:reference', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Erreur route refund:', error);
     res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Stripe Webhook Handler
+const StripeWebhookHandler = require('../services/stripeWebhookHandler');
+
+router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !webhookSecret) {
+      return res.status(400).json({ message: 'Missing signature or webhook secret' });
+    }
+
+    // Verify signature
+    const payload = req.body;
+    const isValid = StripeWebhookHandler.verifyWebhookSignature(payload, sig, webhookSecret);
+
+    if (!isValid) {
+      console.warn('Invalid webhook signature');
+      return res.status(401).json({ message: 'Invalid signature' });
+    }
+
+    // Parse event
+    let event;
+    try {
+      event = JSON.parse(payload);
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid JSON' });
+    }
+
+    // Process event
+    const result = await StripeWebhookHandler.processWebhookEvent(event);
+
+    if (result.success) {
+      res.json({ received: true });
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ message: 'Webhook processing failed' });
   }
 });
 

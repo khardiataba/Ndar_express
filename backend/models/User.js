@@ -150,7 +150,20 @@ const UserSchema = new mongoose.Schema({
     idCardBack: { type: documentReviewSchema, default: () => ({}) },
     license: { type: documentReviewSchema, default: () => ({}) },
     registrationCard: { type: documentReviewSchema, default: () => ({}) }
-  }
+  },
+  // Password Reset
+  passwordResetToken: { type: String, default: null },
+  passwordResetExpires: { type: Date, default: null },
+  emailVerificationToken: { type: String, default: null },
+  lastPasswordChangeAt: { type: Date, default: null }
 })
+
+// Add indexes for performance
+UserSchema.index({ email: 1 })
+UserSchema.index({ phone: 1 })
+UserSchema.index({ status: 1, role: 1 })
+UserSchema.index({ createdAt: -1 })
+UserSchema.index({ isOnline: 1 })
+UserSchema.index({ role: 1, status: 1, rating: -1 })
 
 module.exports = mongoose.model("User", UserSchema)

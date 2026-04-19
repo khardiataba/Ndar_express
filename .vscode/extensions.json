@@ -2,6 +2,7 @@
     "recommendations": [
         "codeium.codeium-enterprise-updater",
         "google.geminicodeassist",
-        "punal100.antigravity-copilot"
+        "punal100.antigravity-copilot",
+        "lirobi.phone-preview"
     ]
 }

@@ -84,12 +84,12 @@ const Support = () => {
         <header className="ndar-card rounded-[34px] p-6">
           <button
             onClick={() => navigate(-1)}
-            className="mb-3 inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-[#eef5fb] transition-all hover:bg-white/20"
+            className="mb-3 inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-[#5a8fd1] transition-all hover:bg-white/20"
           >
             ⬅️ Retour
           </button>
           <h1 className="font-['Sora'] text-3xl font-extrabold text-[#16324f]">Support client</h1>
-          <p className="mt-2 text-sm text-[#70839a]">Envoyez une demande, consultez son statut et discutez avec l'équipe Yoonbi.</p>
+          <p className="mt-2 text-sm text-[#2a3f5f]">Envoyez une demande, consultez son statut et discutez avec l'équipe YOON WI.</p>
         </header>
 
         {error && <div className="ndar-card rounded-[24px] bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">{error}</div>}
@@ -154,7 +154,7 @@ const Support = () => {
 
         <section className="ndar-card rounded-[30px] p-6">
           <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Tickets support</h2>
-          <p className="mt-2 text-sm text-[#70839a]">Suivez l'avancement de vos demandes ou repondez aux conversations en cours.</p>
+          <p className="mt-2 text-sm text-[#5a8fd1]">Suivez l'avancement de vos demandes ou repondez aux conversations en cours.</p>
 
           {loading ? (
             <div className="mt-4 space-y-3">
@@ -163,7 +163,7 @@ const Support = () => {
               ))}
             </div>
           ) : tickets.length === 0 ? (
-            <div className="mt-4 rounded-[24px] bg-[#f8fbff] p-6 text-sm text-[#70839a]">Aucun ticket pour le moment.</div>
+            <div className="mt-4 rounded-[24px] bg-[#f8fbff] p-6 text-sm text-[#5a8fd1]">Aucun ticket pour le moment.</div>
           ) : (
             <div className="mt-4 space-y-4">
               {tickets.map((ticket) => (
@@ -171,7 +171,7 @@ const Support = () => {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="font-semibold text-[#16324f]">{ticket.subject}</h3>
-                      <p className="mt-1 text-sm text-[#70839a]">Categorie: {ticket.category} • Priorité: {ticket.priority}</p>
+                      <p className="mt-1 text-sm text-[#5a8fd1]">Categorie: {ticket.category} • Priorité: {ticket.priority}</p>
                     </div>
                     <div className="rounded-full bg-[#edf5fb] px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#165c96]">
                       {ticket.status}
@@ -180,7 +180,7 @@ const Support = () => {
                   <div className="mt-4 space-y-3 text-sm text-[#4a5568]">
                     {ticket.messages?.map((msg, index) => (
                       <div key={index} className="rounded-2xl bg-[#f7fafc] p-3">
-                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-[#70839a]">
+                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-[#5a8fd1]">
                           <span>{msg.senderRole === 'admin' ? 'Support' : 'Client'}</span>
                           <span>{new Date(msg.createdAt || ticket.updatedAt).toLocaleString('fr-FR')}</span>
                         </div>

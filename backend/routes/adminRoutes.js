@@ -30,11 +30,7 @@ const getDocumentUrl = (user, documentKey) => {
 }
 
 // Liste des utilisateurs en attente (chauffeurs + techniciens)
-router.get(
-  "/users/pending",
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
+router.get( "/users/pending",authMiddleware,requireRole("admin"),async (req, res) => {
     try {
       const pendingUsers = await User.find({
         status: { $in: ["pending", "needs_revision"] },
@@ -136,11 +132,7 @@ router.patch(
   }
 )
 
-router.patch(
-  "/users/:id/request-revision",
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
+router.patch("/users/:id/request-revision",authMiddleware,requireRole("admin"),async (req, res) => {
     try {
       const user = await User.findById(req.params.id)
       if (!user) {
@@ -164,11 +156,7 @@ router.patch(
   }
 )
 
-router.patch(
-  "/users/:id/cancel",
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
+router.patch("/users/:id/cancel",authMiddleware,requireRole("admin"),async (req, res) => {
     try {
       const user = await User.findById(req.params.id)
       if (!user) {

@@ -81,14 +81,14 @@ const Notifications = () => {
         <header className="ndar-card rounded-[34px] p-6">
           <button
             onClick={() => navigate(-1)}
-            className="mb-3 inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-[#eef5fb] transition-all hover:bg-white/20"
+            className="mb-3 inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-[#5a8fd1] transition-all hover:bg-white/20"
           >
             ⬅️ Retour
           </button>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-['Sora'] text-3xl font-extrabold text-[#16324f]">Notifications</h1>
-              <p className="mt-2 text-sm text-[#70839a]">Toutes vos alertes, messages de support et annonces importantes.</p>
+              <p className="mt-2 text-sm text-[#5a8fd1]">Toutes vos alertes, messages de support et annonces importantes.</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <button
@@ -124,7 +124,7 @@ const Notifications = () => {
             ))}
           </div>
         ) : notifications.length === 0 ? (
-          <div className="ndar-card rounded-[30px] p-6 text-sm text-[#70839a]">Aucune notification pour le moment.</div>
+          <div className="ndar-card rounded-[30px] p-6 text-sm text-[#5a8fd1]">Aucune notification pour le moment.</div>
         ) : (
           <div className="space-y-4">
             {notifications.map((notification) => (
@@ -137,7 +137,7 @@ const Notifications = () => {
                     <h2 className="font-semibold text-[#16324f]">{notification.title}</h2>
                     <p className="mt-2 text-sm text-[#4a5568]">{notification.message}</p>
                   </div>
-                  <div className="text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">
+                  <div className="text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">
                     {new Date(notification.createdAt).toLocaleString('fr-FR')}
                   </div>
                 </div>

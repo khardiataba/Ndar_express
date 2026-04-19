@@ -113,14 +113,14 @@ const AdminDashboard = () => {
       <div className="ndar-shell space-y-4">
         <header className="ndar-card rounded-[34px] p-6">
           <div className="font-['Sora'] text-3xl font-extrabold text-[#16324f]">Validation des dossiers</div>
-          <p className="mt-2 text-sm text-[#70839a]">Analysez les reponses, les documents et validez les chauffeurs ou prestataires.</p>
+          <p className="mt-2 text-sm text-[#5a8fd1]">Analysez les reponses, les documents et validez les chauffeurs ou prestataires.</p>
         </header>
 
         <section className="ndar-card rounded-[34px] p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Contributions services</h2>
-              <p className="text-sm text-[#70839a]">Suivi des contributions obligatoires de 1% avec minimum 100 F pour les services.</p>
+              <p className="text-sm text-[#5a8fd1]">Suivi des contributions obligatoires de 1% avec minimum 100 F pour les services.</p>
             </div>
             <div className="rounded-full bg-[#edf5fb] px-3 py-2 text-xs font-bold text-[#165c96]">
               {serviceContributions.filter((item) => item.platformContributionStatus === "due").length} dues
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[22px] bg-[#f8fbff] p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Total demandes</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Total demandes</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-[#16324f]">{serviceContributions.length}</div>
             </div>
             <div className="rounded-[22px] bg-[#eefaf2] p-4">
@@ -158,13 +158,13 @@ const AdminDashboard = () => {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Dernières contributions</h2>
-                  <p className="text-sm text-[#70839a]">Vérifiez rapidement les demandes de service et leur statut de paiement.</p>
+                  <p className="text-sm text-[#5a8fd1]">Vérifiez rapidement les demandes de service et leur statut de paiement.</p>
                 </div>
                 <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-xs font-bold text-[#165c96]">Admin</span>
               </div>
 
               {serviceContributions.length === 0 ? (
-                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">Aucune contribution enregistrée.</div>
+                <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#5a8fd1]">Aucune contribution enregistrée.</div>
               ) : (
                 <div className="space-y-3">
                   {serviceContributions.slice(0, 8).map((item) => (
@@ -172,8 +172,8 @@ const AdminDashboard = () => {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold text-[#16324f]">{item.title || item.category}</div>
-                          <div className="mt-1 text-sm text-[#70839a]">{item.description}</div>
-                          <div className="mt-2 text-xs text-[#70839a]">
+                          <div className="mt-1 text-sm text-[#5a8fd1]">{item.description}</div>
+                          <div className="mt-2 text-xs text-[#5a8fd1]">
                             Client: {item.clientId} • Prestataire: {item.technicianId || "en attente"}
                           </div>
                         </div>
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
             </section>
 
             {pendingUsers.length === 0 ? (
-              <div className="ndar-card rounded-[30px] p-6 text-sm text-[#70839a]">Aucun compte en attente.</div>
+              <div className="ndar-card rounded-[30px] p-6 text-sm text-[#5a8fd1]">Aucun compte en attente.</div>
             ) : (
               pendingUsers.map((user) => (
                 <article key={user._id} className="ndar-card rounded-[30px] p-5">
@@ -202,11 +202,11 @@ const AdminDashboard = () => {
                       <div className="font-['Sora'] text-xl font-bold text-[#16324f]">
                         {user.firstName || user.name} {user.lastName || ""}
                       </div>
-                      <div className="mt-1 text-sm text-[#70839a]">{user.email}</div>
+                      <div className="mt-1 text-sm text-[#5a8fd1]">{user.email}</div>
                       <div className="mt-2 inline-flex rounded-full bg-[#edf5fb] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#165c96]">
                         {user.role}
                       </div>
-                      <div className="mt-2 text-sm text-[#70839a]">Statut dossier: {user.status}</div>
+                      <div className="mt-2 text-sm text-[#5a8fd1]">Statut dossier: {user.status}</div>
                     </div>
                     <button
                       onClick={() => verifyUser(user._id)}
@@ -217,7 +217,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="mt-4 rounded-[24px] bg-[#fff8ea] p-4">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">Retour admin</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9a7a24]">Retour admin</div>
                     <textarea
                       value={reviewNotes[user._id] ?? user.reviewNote ?? ""}
                       onChange={(event) => updateReviewNote(user._id, event.target.value)}
@@ -243,12 +243,12 @@ const AdminDashboard = () => {
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[24px] bg-[#f8fbff] p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-[#70839a]">Contact</div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-[#5a8fd1]">Contact</div>
                       <div className="mt-2 text-sm text-[#16324f]">Telephone: {user.phone || "Non renseigne"}</div>
                       <div className="mt-2 text-sm text-[#16324f]">Statut: {user.status}</div>
                     </div>
                     <div className="rounded-[24px] bg-[#fff8ea] p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-[#70839a]">Documents</div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-[#9a7a24]">Documents</div>
                       <div className="mt-2 text-sm text-[#16324f]">CNI: {user.idCardUrl ? "Fournie" : "Manquante"}</div>
                       <div className="mt-2 text-sm text-[#16324f]">CNI recto: {user.idCardFrontUrl ? "Fournie" : "Manquante"}</div>
                       <div className="mt-2 text-sm text-[#16324f]">CNI verso: {user.idCardBackUrl ? "Fournie" : "Manquante"}</div>
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="mt-4 rounded-[24px] bg-white/80 p-4 ring-1 ring-[#e2eaf2]">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">Verification des pieces</div>
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Verification des pieces</div>
                     <div className="grid gap-3">
                       {[
                         { key: "profilePhoto", url: user.profilePhotoUrl, required: true },
@@ -297,7 +297,7 @@ const AdminDashboard = () => {
                                   Ouvrir
                                 </a>
                               ) : (
-                                <span className="text-xs text-[#70839a]">Aucun fichier</span>
+                                <span className="text-xs text-[#5a8fd1]">Aucun fichier</span>
                               )}
                             </div>
 
@@ -333,16 +333,16 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="mt-4 rounded-[24px] bg-white/80 p-4 ring-1 ring-[#e2eaf2]">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">Dossier detaille</div>
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Dossier detaille</div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {dossierItems.map((item) => (
                         <div key={item.key} className="rounded-[18px] bg-[#f8fbff] px-4 py-3 text-sm text-[#16324f]">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">{item.label}</div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">{item.label}</div>
                           <div className="mt-1">{user.providerDetails?.[item.key] || "Non renseigne"}</div>
                         </div>
                       ))}
                       <div className="rounded-[18px] bg-[#f8fbff] px-4 py-3 text-sm text-[#16324f]">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Materiel pro</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Materiel pro</div>
                         <div className="mt-1">{user.providerDetails?.hasProfessionalTools ? "Oui" : "Non"}</div>
                       </div>
                     </div>

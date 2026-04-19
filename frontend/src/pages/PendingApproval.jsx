@@ -187,7 +187,7 @@ const PendingApproval = () => {
 
         <section className="ndar-panel-beige rounded-[38px] p-6">
           <div className="font-['Sora'] text-xl font-bold text-[#16324f]">Et maintenant ?</div>
-          <div className="mt-3 space-y-2 text-sm text-[#70839a]">
+          <div className="mt-3 space-y-2 text-sm text-[#5a8fd1]">
             <p>1. Le systeme verifie automatiquement la presence et le type des pieces, puis lit leur texte avec OCR.</p>
             <p>2. Si toutes les pieces requises sont reconnues correctement, le compte passe en actif automatiquement.</p>
             <p>3. Si une piece n'est pas reconnue ou parait incorrecte, vous devez la reprendre plus nettement.</p>
@@ -215,15 +215,15 @@ const PendingApproval = () => {
         {user?.status === "needs_revision" && (
           <section className="ndar-card rounded-[38px] p-6">
             <div className="font-['Sora'] text-xl font-bold text-[#16324f]">Reprendre la partie demandee</div>
-            <p className="mt-2 text-sm text-[#70839a]">
+            <p className="mt-2 text-sm text-[#5a8fd1]">
               L'administration a demande une correction. Renvoyez les documents concernes avec des informations justes et lisibles.
             </p>
 
             <div className="mt-5 space-y-4">
               {requiredDocuments.map((documentKey) => (
                 <div key={documentKey}>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">{documentLabels[documentKey]}</label>
-                  <div className="mb-2 text-xs text-[#70839a]">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#5a8fd1]">{documentLabels[documentKey]}</label>
+                  <div className="mb-2 text-xs text-[#5a8fd1]">
                     {documentKey === "profilePhoto"
                       ? "Vous pouvez prendre une nouvelle photo avec la camera du telephone."
                       : "Vous pouvez reprendre la piece avec la camera ou choisir un fichier deja enregistre."}

@@ -99,7 +99,7 @@ const MyBookings = () => {
   const items = [
     ...rides.map((ride) => ({
       id: ride._id,
-      title: ride.vehicleType || "Yoonbi Ride",
+      title: ride.vehicleType || "YOON WI Ride",
       subtitle: `${getRideAddress(ride.pickup)} → ${getRideAddress(ride.destination)}`,
       status: ride.status || "pending",
       meta: ride.price ? `${ride.price.toLocaleString()} FCFA • ${ride.paymentMethod || "Cash"}` : "Tarif sur demande",
@@ -162,7 +162,7 @@ const MyBookings = () => {
               <p className="mt-2 text-sm text-[#eaf3fb]">Suivez vos courses et demandes avec une lecture beaucoup plus claire des statuts.</p>
             </div>
             <div className="rounded-[26px] border border-white/10 bg-white/10 px-4 py-4 text-right backdrop-blur">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d6e7f5]">Actifs</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Actifs</div>
               <div className="mt-2 font-['Sora'] text-2xl font-bold text-white">{highlightedCount}</div>
             </div>
           </div>
@@ -195,14 +195,14 @@ const MyBookings = () => {
                         {getStatusMeta(item.status).label}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-[#70839a]">{item.subtitle}</p>
+                    <p className="mt-2 text-sm text-[#5a8fd1]">{item.subtitle}</p>
                     <div className="mt-3 rounded-[18px] bg-[linear-gradient(180deg,#fffdfa_0%,#f7efe3_100%)] px-4 py-3 text-sm text-[#5f7184]">
                       {getStatusMeta(item.status).copy}
                     </div>
                     <div className="mt-3 text-sm font-semibold text-[#165c96]">{item.meta}</div>
                     {item.personLabel && (
                       <div className="mt-3 rounded-[18px] bg-[#f7fbff] px-4 py-3 text-sm text-[#16324f]">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">
                           {item.kind === "ride" ? "Chauffeur affecte" : "Prestataire affecte"}
                         </div>
                         <div className="mt-1 font-semibold">{item.personLabel}</div>
@@ -237,7 +237,7 @@ const MyBookings = () => {
           <div className="ndar-card rounded-[30px] p-6 text-center">
             <div className="text-5xl">📭</div>
             <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Aucune reservation pour le moment</h2>
-            <p className="mt-2 text-sm text-[#70839a]">Commencez par une course, un service artisan ou un rendez-vous beaute.</p>
+            <p className="mt-2 text-sm text-[#5a8fd1]">Commencez par une course, un service artisan ou un rendez-vous beaute.</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button onClick={() => navigate("/ride")} className="rounded-[24px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-3 text-sm font-bold text-white">Reserver une course</button>
               <button onClick={() => navigate("/service")} className="rounded-[24px] bg-[#eadcc4] px-5 py-3 text-sm font-bold text-[#0a3760]">Demander un service</button>

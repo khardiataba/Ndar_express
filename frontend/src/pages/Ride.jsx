@@ -70,7 +70,7 @@ const Ride = () => {
   const [appCommissionPercent, setAppCommissionPercent] = useState(12)
   const [appCommissionAmount, setAppCommissionAmount] = useState(0)
   const [driverNetAmount, setDriverNetAmount] = useState(0)
-  const [vehicleType, setVehicleType] = useState("Yoonbi Classic")
+  const [vehicleType, setVehicleType] = useState("YOON WI Classic")
   const [paymentMethod, setPaymentMethod] = useState("Cash")
   const [submitting, setSubmitting] = useState(false)
   const [loadingEstimate, setLoadingEstimate] = useState(false)
@@ -266,7 +266,7 @@ const Ride = () => {
             <div className="ndar-hero-glass rounded-[30px] px-4 py-4 shadow-[0_20px_40px_rgba(8,35,62,0.18)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="font-['Sora'] text-2xl font-extrabold text-white">Yoonbi</div>
+                  <div className="font-['Sora'] text-2xl font-extrabold text-white">YOON WI</div>
                   <div className="ndar-hero-soft text-xs font-semibold uppercase tracking-[0.18em]">Trajet premium en temps reel</div>
                 </div>
                 <button onClick={() => navigate("/mybookings")} className="ndar-hero-button rounded-full px-3 py-2 text-xs font-bold">Mes courses</button>
@@ -282,12 +282,12 @@ const Ride = () => {
             <div className="rounded-[30px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] p-4 shadow-[0_16px_34px_rgba(112,79,34,0.08)]">
               <div className="mb-3 flex items-center justify-between">
                 <h1 className="font-['Sora'] text-2xl font-extrabold text-[#16324f]">Ou allez-vous ?</h1>
-                {(loadingEstimate || resolvingClick) && <span className="rounded-full bg-[#eef2f6] px-3 py-2 text-xs font-semibold text-[#70839a]">Calcul en cours...</span>}
+                {(loadingEstimate || resolvingClick) && <span className="rounded-full bg-[#eef2f6] px-3 py-2 text-xs font-semibold text-[#5a8fd1]">Calcul en cours...</span>}
               </div>
 
               <div className="space-y-3">
                 <div className="relative">
-                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#70839a]">Depart</label>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5a8fd1]">Depart</label>
                   <input
                     value={pickupQuery}
                     onFocus={() => setSelectionMode("pickup")}
@@ -299,7 +299,7 @@ const Ride = () => {
                       {pickupResults.map((result) => (
                         <button key={`${result.lat}-${result.lng}`} onClick={() => selectPickup(result)} className="block w-full rounded-xl px-3 py-3 text-left text-sm text-[#16324f] hover:bg-[#f7f0e4]">
                           <div className="font-semibold">{result.name}</div>
-                          <div className="mt-1 text-xs text-[#70839a]">{result.address}</div>
+                          <div className="mt-1 text-xs text-[#5a8fd1]">{result.address}</div>
                         </button>
                       ))}
                     </div>
@@ -307,7 +307,7 @@ const Ride = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#70839a]">Destination</label>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5a8fd1]">Destination</label>
                   <input
                     value={destinationQuery}
                     onFocus={() => setSelectionMode("destination")}
@@ -319,7 +319,7 @@ const Ride = () => {
                       {destinationResults.map((result) => (
                         <button key={`${result.lat}-${result.lng}`} onClick={() => selectDestination(result)} className="block w-full rounded-xl px-3 py-3 text-left text-sm text-[#16324f] hover:bg-[#f7f0e4]">
                           <div className="font-semibold">{result.name}</div>
-                          <div className="mt-1 text-xs text-[#70839a]">{result.address}</div>
+                          <div className="mt-1 text-xs text-[#5a8fd1]">{result.address}</div>
                         </button>
                       ))}
                     </div>
@@ -330,15 +330,15 @@ const Ride = () => {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_12px_28px_rgba(8,35,62,0.06)]">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Distance</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Distance</div>
                 <div className="mt-2 font-['Sora'] text-xl font-bold text-[#16324f]">{distanceKm ? `${distanceKm} km` : "--"}</div>
               </div>
               <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_12px_28px_rgba(8,35,62,0.06)]">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Duree</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Duree</div>
                 <div className="mt-2 font-['Sora'] text-xl font-bold text-[#16324f]">{durationMin ? `${durationMin} min` : "--"}</div>
               </div>
               <div className="rounded-[24px] bg-[linear-gradient(180deg,#e8f2fa_0%,#dceaf8_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Prix</div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Prix</div>
                 <div className="mt-2 font-['Sora'] text-xl font-bold text-[#165c96]">{price.toLocaleString()} F</div>
               </div>
             </div>
@@ -384,14 +384,14 @@ const Ride = () => {
                 ))}
               </div>
               {paymentMethod === 'Card' && (
-                <p className="mt-2 text-xs text-[#70839a]">Le paiement par carte sera géré via notre terminal sécurisé lors du passage du chauffeur ou via notre lien de paiement QR.</p>
+                <p className="mt-2 text-xs text-[#5a8fd1]">Le paiement par carte sera géré via notre terminal sécurisé lors du passage du chauffeur ou via notre lien de paiement QR.</p>
               )}
             </div>
 
             <div className="space-y-3">
               {[
-                { label: "Yoonbi Go", subtitle: "Trajet standard, prix malin", emoji: "🚕", priceValue: price },
-                { label: "Yoonbi Confort", subtitle: "Plus d'espace et plus de confort", emoji: "🚘", priceValue: price + 2000 }
+                { label: "YOON WI Go", subtitle: "Trajet standard, prix malin", emoji: "🚕", priceValue: price },
+                { label: "YOON WI Confort", subtitle: "Plus d'espace et plus de confort", emoji: "🚘", priceValue: price + 2000 }
               ].map((option) => (
                 <button
                   key={option.label}
@@ -404,13 +404,13 @@ const Ride = () => {
                     <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#fff7eb] text-3xl shadow-sm">{option.emoji}</div>
                     <div>
                       <div className="font-semibold text-[#16324f]">{option.label}</div>
-                      <div className="text-sm text-[#70839a]">{option.subtitle}</div>
-                      <div className="mt-1 text-xs text-[#70839a]">{formatCompactAddress(pickup)} → {formatCompactAddress(destination)}</div>
+                      <div className="text-sm text-[#5a8fd1]">{option.subtitle}</div>
+                      <div className="mt-1 text-xs text-[#5a8fd1]">{formatCompactAddress(pickup)} → {formatCompactAddress(destination)}</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-['Sora'] text-xl font-bold text-[#165c96]">{option.priceValue.toLocaleString()} F</div>
-                    <div className="text-xs text-[#70839a]">{durationMin ? `${durationMin} min` : "Estimation"}</div>
+                    <div className="text-xs text-[#5a8fd1]">{durationMin ? `${durationMin} min` : "Estimation"}</div>
                   </div>
                 </button>
               ))}

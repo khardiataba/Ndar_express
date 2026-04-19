@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ToastProvider } from "./context/ToastContext"
+import ErrorBoundary from "./components/ErrorBoundary"
 import ProtectedRoute from "./components/ProtectedRoute"
+import MainLayout from "./components/MainLayout"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Welcome from "./pages/Welcome"
@@ -11,14 +13,23 @@ import Service from "./pages/Service"
 import Rental from "./pages/Rental"
 import RentalDetail from "./pages/RentalDetail"
 import MyBookings from "./pages/MyBookings"
+import Profile from "./pages/Profile"
 import AdminDashboard from "./pages/AdminDashboard"
 import DriverDashboard from "./pages/DriverDashboard"
 import TechnicianDashboard from "./pages/TechnicianDashboard"
 import RideTracking from "./pages/RideTracking"
+import DriverTracking from "./pages/DriverTracking"
+import RideDetails from "./pages/RideDetails"
+import ServiceDetails from "./pages/ServiceDetails"
 import Notifications from "./pages/Notifications"
 import Support from "./pages/Support"
 import PendingApproval from "./pages/PendingApproval"
+import ResetPassword from "./pages/ResetPassword"
+import ForgotPassword from "./pages/ForgotPassword"
+import NotFound from "./pages/NotFound"
+import ServerError from "./pages/ServerError"
 import useSocket from "./hooks/useSocket"
+import useSessionTimeout from "./hooks/useSessionTimeout"
 
 const DashboardRouter = () => {
   const { user } = useAuth()
@@ -31,23 +42,20 @@ const DashboardRouter = () => {
     return <PendingApproval />
   }
 
+  let content
   if (user.role === "client") {
-    return <Home />
+    content = <Home />
+  } else if (user.role === "driver") {
+    content = <DriverDashboard />
+  } else if (user.role === "technician") {
+    content = <TechnicianDashboard />
+  } else if (user.role === "admin") {
+    content = <AdminDashboard />
+  } else {
+    content = <Home />
   }
 
-  if (user.role === "driver") {
-    return <DriverDashboard />
-  }
-
-  if (user.role === "technician") {
-    return <TechnicianDashboard />
-  }
-
-  if (user.role === "admin") {
-    return <AdminDashboard />
-  }
-
-  return <Home />
+  return <MainLayout>{content}</MainLayout>
 }
 
 const AppRoutes = () => {
@@ -58,9 +66,9 @@ const AppRoutes = () => {
       <div className="flex min-h-screen w-full items-center justify-center px-4">
         <div className="ndar-card rounded-[34px] px-8 py-10 text-center">
           <div className="font-['Sora'] text-4xl font-extrabold text-[#165c96]">
-            Yoonbi
+            YOON WI
           </div>
-          <p className="mt-3 text-sm text-[#70839a]">Chargement de votre espace...</p>
+          <p className="mt-3 text-sm text-[#5a8fd1]">Chargement de votre espace...</p>
         </div>
       </div>
     )
@@ -71,6 +79,7 @@ const AppRoutes = () => {
       <Route path="/" element={<DashboardRouter />} />
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
       <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
+      <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/" />} />
       <Route
         path="/pending"
         element={
@@ -84,7 +93,9 @@ const AppRoutes = () => {
         path="/app"
         element={
           <ProtectedRoute>
-            <Home />
+            <MainLayout>
+              <Home />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -92,7 +103,17 @@ const AppRoutes = () => {
         path="/ride"
         element={
           <ProtectedRoute>
-            <Ride />
+            <MainLayout>
+              <Ride />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ride/:id"
+        element={
+          <ProtectedRoute>
+            <RideDetails />
           </ProtectedRoute>
         }
       />
@@ -100,7 +121,19 @@ const AppRoutes = () => {
         path="/tracking"
         element={
           <ProtectedRoute>
-            <RideTracking />
+            <MainLayout>
+              <RideTracking />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ride/:rideId/tracking"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <DriverTracking />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -108,7 +141,9 @@ const AppRoutes = () => {
         path="/notifications"
         element={
           <ProtectedRoute>
-            <Notifications />
+            <MainLayout>
+              <Notifications />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -116,7 +151,9 @@ const AppRoutes = () => {
         path="/support"
         element={
           <ProtectedRoute>
-            <Support />
+            <MainLayout>
+              <Support />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -124,7 +161,17 @@ const AppRoutes = () => {
         path="/service"
         element={
           <ProtectedRoute>
-            <Service />
+            <MainLayout>
+              <Service />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service/:id"
+        element={
+          <ProtectedRoute>
+            <ServiceDetails />
           </ProtectedRoute>
         }
       />
@@ -132,7 +179,9 @@ const AppRoutes = () => {
         path="/rental"
         element={
           <ProtectedRoute>
-            <Rental />
+            <MainLayout>
+              <Rental />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -140,7 +189,9 @@ const AppRoutes = () => {
         path="/rental/:id"
         element={
           <ProtectedRoute>
-            <RentalDetail />
+            <MainLayout>
+              <RentalDetail />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -148,7 +199,9 @@ const AppRoutes = () => {
         path="/mybookings"
         element={
           <ProtectedRoute>
-            <MyBookings />
+            <MainLayout>
+              <MyBookings />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -176,29 +229,44 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Profile />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/404" element={<NotFound />} />
+      <Route path="/500" element={<ServerError />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
 
-const SocketLifecycle = () => {
+const SessionManager = () => {
   useSocket()
+  useSessionTimeout()
   return null
 }
 
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <ToastProvider>
-          <SocketLifecycle />
-          <div className="min-h-screen selection:bg-[#d7ae49]/30">
-            <AppRoutes />
-          </div>
-        </ToastProvider>
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <ToastProvider>
+            <SessionManager />
+            <div className="min-h-screen selection:bg-[#d7ae49]/30">
+              <AppRoutes />
+            </div>
+          </ToastProvider>
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   )
 }
 

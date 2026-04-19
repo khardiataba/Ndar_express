@@ -1,6 +1,7 @@
 const express = require("express")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
+const crypto = require("crypto")
 const User = require("../models/User")
 const { authMiddleware } = require("../middleware/auth")
 const upload = require("../middleware/upload")
@@ -297,6 +298,76 @@ router.post("/login", async (req, res) => {
   }
 })
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) {
+      return res.status(400).json({ message: "Email requis" })
+    }
+
+    const user = await User.findOne({ email: String(email).toLowerCase().trim() })
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ message: "Si l'email existe, un lien de réinitialisation a été envoyé" })
+    }
+
+    // Generate reset token (valid for 30 minutes)
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    
+    user.passwordResetToken = hashedToken
+    user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000)
+    await user.save()
+
+    // In production, send email here
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`
+    console.log(`[PASSWORD RESET] ${email}: ${resetUrl}`)
+
+    return res.json({ message: "Si l'email existe, un lien de réinitialisation a été envoyé" })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.post("/reset-password/:token", async (req, res) => {
+  try {
+    const { token } = req.params
+    const { password } = req.body
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token et nouveau mot de passe requis" })
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caracteres avec une lettre et un chiffre" })
+    }
+
+    // Hash token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() }
+    })
+
+    if (!user) {
+      return res.status(400).json({ message: "Lien de réinitialisation invalide ou expiré" })
+    }
+
+    // Update password
+    user.password = await bcrypt.hash(password, 10)
+    user.passwordResetToken = null
+    user.passwordResetExpires = null
+    user.lastPasswordChangeAt = new Date()
+    await user.save()
+
+    return res.json({ message: "Mot de passe réinitialisé avec succès" })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
 router.get("/me", authMiddleware, async (req, res) => {
   return res.json(serializeUser(req.user))
 })
@@ -324,10 +395,7 @@ router.patch("/me", authMiddleware, async (req, res) => {
   }
 })
 
-router.post(
-  "/upload-docs",
-  authMiddleware,
-  upload.fields([
+router.post("/upload-docs", authMiddleware,upload.fields([
     { name: "profilePhoto", maxCount: 1 },
     { name: "idCardFront", maxCount: 1 },
     { name: "idCardBack", maxCount: 1 },

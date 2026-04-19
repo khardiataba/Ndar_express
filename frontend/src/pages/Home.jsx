@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import BottomNav from "../components/BottomNav"
 import MapPicker from "../components/MapPicker"
+import SpeechInput from "../components/SpeechInput"
 import api from "../api"
 
 const featureCards = [
@@ -77,6 +78,7 @@ const discoveryCatalog = [
     price: 5500,
     accent: "bg-[#eefaf2]",
     iconLabel: "FOOD",
+    iconSymbol: "🍽️",
     coords: { lat: 16.0308, lng: -16.5001 }
   },
   {
@@ -91,6 +93,7 @@ const discoveryCatalog = [
     price: 8000,
     accent: "bg-[#fff6e2]",
     iconLabel: "BAK",
+    iconSymbol: "🍰",
     coords: { lat: 16.042, lng: -16.5065 }
   },
   {
@@ -105,6 +108,7 @@ const discoveryCatalog = [
     price: 2500,
     accent: "bg-[#edf5fb]",
     iconLabel: "RIDE",
+    iconSymbol: "🚗",
     coords: { lat: 16.0283, lng: -16.4976 }
   },
   {
@@ -119,6 +123,7 @@ const discoveryCatalog = [
     price: 7000,
     accent: "bg-[#fff1f1]",
     iconLabel: "ELEC",
+    iconSymbol: "💡",
     coords: { lat: 16.0188, lng: -16.4919 }
   },
   {
@@ -133,6 +138,7 @@ const discoveryCatalog = [
     price: 3000,
     accent: "bg-[#eef4ff]",
     iconLabel: "DLV",
+    iconSymbol: "🚚",
     coords: { lat: 16.0262, lng: -16.4992 }
   },
   {
@@ -147,6 +153,7 @@ const discoveryCatalog = [
     price: 12000,
     accent: "bg-[#fff2f7]",
     iconLabel: "BEAU",
+    iconSymbol: "💇",
     coords: { lat: 16.0149, lng: -16.5072 }
   },
   {
@@ -161,6 +168,7 @@ const discoveryCatalog = [
     price: 15000,
     accent: "bg-[#f6f0e6]",
     iconLabel: "WOOD",
+    iconSymbol: "🪑",
     coords: { lat: 16.0068, lng: -16.5205 }
   },
   {
@@ -175,6 +183,7 @@ const discoveryCatalog = [
     price: 8000,
     accent: "bg-[#e0f2fe]",
     iconLabel: "CAR",
+    iconSymbol: "🚐",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -189,6 +198,7 @@ const discoveryCatalog = [
     price: 10000,
     accent: "bg-[#dbeafe]",
     iconLabel: "PIPE",
+    iconSymbol: "🔧",
     coords: { lat: 16.018, lng: -16.3728 }
   },
   {
@@ -203,6 +213,7 @@ const discoveryCatalog = [
     price: 12000,
     accent: "bg-[#dcfce7]",
     iconLabel: "GARD",
+    iconSymbol: "🌱",
     coords: { lat: 16.0312, lng: -16.5078 }
   },
   {
@@ -217,6 +228,7 @@ const discoveryCatalog = [
     price: 6000,
     accent: "bg-[#f3e8ff]",
     iconLabel: "TECH",
+    iconSymbol: "💻",
     coords: { lat: 16.0567, lng: -16.4568 }
   },
   {
@@ -231,6 +243,7 @@ const discoveryCatalog = [
     price: 15000,
     accent: "bg-[#fef3c7]",
     iconLabel: "EDU",
+    iconSymbol: "📚",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -245,6 +258,7 @@ const discoveryCatalog = [
     price: 20000,
     accent: "bg-[#fce7f3]",
     iconLabel: "CLEAN",
+    iconSymbol: "🧹",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -259,6 +273,7 @@ const discoveryCatalog = [
     price: 25000,
     accent: "bg-[#fdf2f8]",
     iconLabel: "BABY",
+    iconSymbol: "👶",
     coords: { lat: 16.0244, lng: -16.5015 }
   }
 ]
@@ -487,13 +502,13 @@ const Home = () => {
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-white shadow-lg shadow-black/20">
                   <img
                     src="/logo.svg"
-                    alt="Yoonbi"
+                    alt="YOON WI"
                     className="h-10 w-10 rounded-full object-cover"
                     onError={(e) => { e.target.src = '/logo512.png'; }}
                   />
                 </div>
-                <div className="font-['Sora'] text-[34px] font-extrabold leading-none text-white">
-                  Yoonbi
+                <div className="font-['Sora'] text-2xl sm:text-[34px] font-extrabold leading-none text-white whitespace-nowrap">
+                  YOON WI
                 </div>
               </div>
               <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-[#f3f8fc]">
@@ -502,7 +517,7 @@ const Home = () => {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d6e7f5]">Bonjour</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8fa3b5]">Bonjour</div>
               <div className="mt-1 text-sm font-bold text-white">{user?.name || "Client"}</div>
               <button
                 onClick={() => {
@@ -522,12 +537,15 @@ const Home = () => {
 
           <div className="flex items-center gap-3 rounded-[24px] border border-white/10 bg-[#082f50] px-4 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <span className="text-[#eef5fb]">⌕</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher un resto, une course, un artisan, un livreur, une coiffure..."
-              className="w-full border-none bg-transparent text-sm text-white outline-none placeholder:text-[#dbe8f3]"
-            />
+            <div className="w-full">
+              <SpeechInput
+                placeholder="Rechercher un service..."
+                value={query}
+                onChange={(text) => setQuery(text)}
+                icon=""
+                isDark={true}
+              />
+            </div>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -555,7 +573,7 @@ const Home = () => {
             <div>
               <div className="ndar-chip">A proximite</div>
               <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Carte & itineraire</h2>
-              <p className="text-sm text-[#70839a]">Reperez vos besoins autour de vous avec une experience plus premium.</p>
+              <p className="text-sm text-[#5a8fd1]">Reperez vos besoins autour de vous avec une experience plus premium.</p>
             </div>
             <button
               onClick={() => navigate(selectedDiscovery?.type === "mobility" ? "/ride" : "/service", {
@@ -590,15 +608,15 @@ const Home = () => {
 
           <div className="mt-4 grid grid-cols-1 gap-3 px-1 pb-2 sm:grid-cols-3">
             <div className="ndar-route-badge rounded-[24px] p-4 text-center">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Selection</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Selection</div>
               <div className="mt-2 text-sm font-bold text-[#16324f]">{selectedDiscovery?.title || "Aucune"}</div>
             </div>
             <div className="ndar-route-badge rounded-[24px] p-4 text-center">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Distance</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Distance</div>
               <div className="mt-2 text-sm font-bold text-[#16324f]">{mapDistanceKm ? `${mapDistanceKm} km` : "--"}</div>
             </div>
             <div className="rounded-[24px] bg-[linear-gradient(180deg,#e7f1f9_0%,#dcebf8_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Duree</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Duree</div>
               <div className="mt-2 text-sm font-bold text-[#165c96]">{mapDurationMin ? `${mapDurationMin} min` : selectedDiscovery?.eta || "--"}</div>
             </div>
           </div>
@@ -608,9 +626,9 @@ const Home = () => {
           <div className={`min-h-[240px] rounded-[32px] bg-gradient-to-br ${featureCards[activeSlide].accent} p-6 text-white shadow-[0_28px_70px_rgba(8,35,62,0.22)] transition-all duration-500`}>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">Modern style, esprit Yoonbi</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#ffd700]">Modern style, esprit YOON WI</p>
                 <h1 className="mt-3 max-w-[220px] font-['Sora'] text-3xl font-extrabold leading-tight">{featureCards[activeSlide].title}</h1>
-                <p className="mt-3 max-w-[250px] text-sm text-white/85">{featureCards[activeSlide].subtitle}</p>
+                <p className="mt-3 max-w-[250px] text-sm text-[#fff7ec]">{featureCards[activeSlide].subtitle}</p>
               </div>
               <div className="flex h-14 w-24 items-center justify-center rounded-2xl border border-white/30 bg-white/20 p-2 text-sm font-bold uppercase tracking-widest text-white shadow-lg">
                 {featureCards[activeSlide].badge}
@@ -646,7 +664,7 @@ const Home = () => {
                 {item.iconSymbol}
               </div>
               <h2 className="font-['Sora'] text-lg font-bold leading-tight">{item.title}</h2>
-              <p className="mt-2 text-xs text-white/85">{item.subtitle}</p>
+              <p className="mt-2 text-xs text-[#fff7ec]">{item.subtitle}</p>
             </button>
           ))}
         </section>
@@ -665,7 +683,7 @@ const Home = () => {
           <div className="mb-4">
             <div className="ndar-chip">Pour vous</div>
             <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Actions intelligentes</h2>
-            <p className="text-sm text-[#70839a]">Des raccourcis pensés pour aller plus vite selon vos usages les plus probables.</p>
+            <p className="text-sm text-[#5a8fd1]">Des raccourcis pensés pour aller plus vite selon vos usages les plus probables.</p>
           </div>
           <div className="space-y-3">
             {smartActions.map((item) => (
@@ -676,7 +694,7 @@ const Home = () => {
               >
                 <div>
                   <div className="font-semibold text-[#16324f]">{item.title}</div>
-                  <div className="mt-1 text-sm text-[#70839a]">{item.subtitle}</div>
+                  <div className="mt-1 text-sm text-[#5a8fd1]">{item.subtitle}</div>
                 </div>
                 <div className="rounded-full bg-[#edf3f8] px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#1260a1]">
                   {item.actionLabel}
@@ -690,7 +708,7 @@ const Home = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Restos ouverts</h2>
-              <p className="text-sm text-[#70839a]">Les options disponibles maintenant autour de vous.</p>
+              <p className="text-sm text-[#5a8fd1]">Les options disponibles maintenant autour de vous.</p>
             </div>
             <button onClick={() => navigate("/service", { state: { suggestedCategory: "food" } })} className="text-sm font-semibold text-[#165c96]">
               Voir plus
@@ -710,12 +728,12 @@ const Home = () => {
                 <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-2xl ${item.accent}`}>{item.iconSymbol}</div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-base font-bold text-[#16324f]">{item.title}</div>
-                  <div className="mt-1 truncate text-sm text-[#70839a]">{item.description}</div>
+                  <div className="mt-1 truncate text-sm text-[#5a8fd1]">{item.description}</div>
                   <div className="mt-2 text-xs font-semibold text-[#18c56e]">Ouvert • {item.area} • {item.eta}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-[#165c96]">{item.price.toLocaleString()} F</div>
-                  <div className="text-xs text-[#70839a]">Commander</div>
+                  <div className="text-xs text-[#5a8fd1]">Commander</div>
                 </div>
               </button>
             ))}

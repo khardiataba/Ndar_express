@@ -5,11 +5,7 @@ const { authMiddleware, requireRole } = require("../middleware/auth")
 const router = express.Router()
 
 // Créer une candidature
-router.post(
-  "/",
-  authMiddleware,
-  requireRole(["driver", "technician"]),
-  async (req, res) => {
+router.post( "/",authMiddleware,requireRole(["driver", "technician"]),async (req, res) => {
     try {
       const { name, phone, jobType, experience, idCard, drivingLicense } = req.body
 
@@ -49,10 +45,7 @@ router.post(
 )
 
 // Récupérer ses propres candidatures
-router.get(
-  "/my-applications",
-  authMiddleware,
-  async (req, res) => {
+router.get("/my-applications",authMiddleware,async (req, res) => {
     try {
       const applications = await Application.find({ userId: req.user._id })
         .sort({ createdAt: -1 })
@@ -66,11 +59,7 @@ router.get(
 )
 
 // Liste des candidatures (admin seulement)
-router.get(
-  "/",
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
+router.get("/",authMiddleware,requireRole("admin"),async (req, res) => {
     try {
       const applications = await Application.find({})
         .populate("userId", "firstName lastName email phone")
@@ -85,11 +74,7 @@ router.get(
 )
 
 // Mettre à jour le statut d'une candidature (admin)
-router.patch(
-  "/:id/status",
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
+router.patch("/:id/status",authMiddleware,requireRole("admin"),async (req, res) => {
     try {
       const { status } = req.body
       const allowedStatuses = ["pending", "approved", "rejected"]

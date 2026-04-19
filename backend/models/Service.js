@@ -10,7 +10,14 @@ description:String,
 
 price:Number,
 
-provider:String
+provider:String,
+
+image:String,
+
+createdAt: {
+  type: Date,
+  default: Date.now
+}
 
 })
 

@@ -1,6 +1,7 @@
 const express = require("express")
 const crypto = require("crypto")
 const ServiceRequest = require("../models/ServiceRequest")
+const Message = require("../models/Message")
 const User = require("../models/User")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
 const { serviceCommission } = require("../utils/pricing")
@@ -415,12 +416,7 @@ router.get(
 )
 
 // Demandes disponibles (techniciens)
-router.get(
-  "/available",
-  authMiddleware,
-  requireVerified,
-  requireRole(["technician", "server"]),
-  async (req, res) => {
+router.get("/available",authMiddleware,requireVerified,requireRole(["technician", "server"]), async (req, res) => {
     try {
       const providerFamily = getProviderFamily(req.user)
       const requests = await ServiceRequest.find({ status: "pending" }).sort({ createdAt: -1 })
@@ -447,12 +443,7 @@ router.get(
 )
 
 // Accepter une demande (technicien)
-router.patch(
-  "/:id/accept",
-  authMiddleware,
-  requireVerified,
-  requireRole(["technician", "server"]),
-  async (req, res) => {
+router.patch( "/:id/accept", authMiddleware,requireVerified,requireRole(["technician", "server"]),async (req, res) => {
     try {
       const request = await ServiceRequest.findById(req.params.id)
       if (!request) return res.status(404).json({ message: "Demande non trouvée" })
@@ -799,6 +790,154 @@ router.post("/:id/safety-report", authMiddleware, requireVerified, async (req, r
       targetReportsCount: targetUser?.safetyReportsCount || null,
       suspended: targetUser?.status === "suspended" || false
     })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+// Get messages for a service
+router.get("/:id/messages", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { id } = req.params
+    const request = await ServiceRequest.findById(id)
+    
+    if (!request) {
+      return res.status(404).json({ message: "Service non trouvé" })
+    }
+
+    // Check authorization
+    if (request.clientId.toString() !== req.user._id.toString() && 
+        request.assignedTechnicianId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    const messages = await Message.find({ serviceId: id }).sort({ createdAt: 1 }).populate('senderId', 'name profilePhoto')
+    return res.json(messages)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+// Send message for a service
+router.post("/:id/messages", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { content } = req.body
+
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({ message: "Le message ne peut pas être vide" })
+    }
+
+    const request = await ServiceRequest.findById(id)
+    if (!request) {
+      return res.status(404).json({ message: "Service non trouvé" })
+    }
+
+    // Check authorization
+    if (request.clientId.toString() !== req.user._id.toString() && 
+        request.assignedTechnicianId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    //Only allow messages for accepted services
+    if (request.status === "pending" || request.status === "completed" || request.status === "cancelled") {
+      return res.status(400).json({ message: "Conversation non disponible pour ce statut" })
+    }
+
+    const message = await Message.create({
+      serviceId: id,
+      senderId: req.user._id,
+      senderRole: req.user.role,
+      content: String(content).trim()
+    })
+
+    const populated = await message.populate('senderId', 'name profilePhoto')
+    return res.status(201).json(populated)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+// Verify platform contribution is paid
+router.post("/:id/verify-contribution", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { id } = req.params
+    const request = await ServiceRequest.findById(id)
+    
+    if (!request) {
+      return res.status(404).json({ message: "Service non trouvé" })
+    }
+
+    // Check authorization - client only
+    if (request.clientId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    // Check if contribution is already paid
+    if (request.platformContributionStatus === "paid") {
+      return res.json({ success: true, message: "Contribution déjà payée" })
+    }
+
+    // Mark as paid if service is accepted
+    if (request.status === "accepted" || request.status === "in_progress" || request.status === "completed") {
+      request.platformContributionStatus = "paid"
+      request.platformContributionPaidAt = new Date()
+      await request.save()
+      
+      return res.json({ 
+        success: true, 
+        message: "Contribution vérifiée et marquée payée",
+        amount: request.appCommissionAmount
+      })
+    }
+
+    return res.status(400).json({ message: "Service doit être accepté pour vérifier la contribution" })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+// Get single service by ID with provider details
+router.get("/:id", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { id } = req.params
+    const request = await ServiceRequest.findById(id).populate('clientId', 'name phone email').populate('assignedTechnicianId', 'name profilePhoto phone email rating role address')
+    
+    if (!request) {
+      return res.status(404).json({ message: "Service non trouvé" })
+    }
+
+    // Check authorization
+    const isClient = request.clientId._id.toString() === req.user._id.toString()
+    const isProvider = request.assignedTechnicianId?._id.toString() === req.user._id.toString()
+    
+    if (!isClient && !isProvider && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    const response = {
+      _id: request._id,
+      title: request.title,
+      description: request.description,
+      category: request.category,
+      status: request.status,
+      price: request.price,
+      appCommissionAmount: request.appCommissionAmount,
+      appCommissionPercent: request.appCommissionPercent,
+      providerNetAmount: request.providerNetAmount,
+      platformContributionStatus: request.platformContributionStatus,
+      clientId: request.clientId,
+      assignedTechnicianId: request.assignedTechnicianId,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+      location: request.location
+    }
+
+    return res.json(response)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
