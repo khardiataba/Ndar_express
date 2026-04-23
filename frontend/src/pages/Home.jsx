@@ -77,7 +77,7 @@ const discoveryCatalog = [
     price: 5500,
     accent: "bg-[#eefaf2]",
     iconLabel: "FOOD",
-    iconSymbol: "🍽️",
+    iconSymbol: "FOOD",
     coords: { lat: 16.0308, lng: -16.5001 }
   },
   {
@@ -92,7 +92,7 @@ const discoveryCatalog = [
     price: 8000,
     accent: "bg-[#fff6e2]",
     iconLabel: "BAK",
-    iconSymbol: "🍰",
+    iconSymbol: "BAKERY",
     coords: { lat: 16.042, lng: -16.5065 }
   },
   {
@@ -107,7 +107,7 @@ const discoveryCatalog = [
     price: 2500,
     accent: "bg-[#edf5fb]",
     iconLabel: "RIDE",
-    iconSymbol: "🚗",
+    iconSymbol: "CAR",
     coords: { lat: 16.0283, lng: -16.4976 }
   },
   {
@@ -122,7 +122,7 @@ const discoveryCatalog = [
     price: 7000,
     accent: "bg-[#fff1f1]",
     iconLabel: "ELEC",
-    iconSymbol: "💡",
+    iconSymbol: "ELECTRICITE",
     coords: { lat: 16.0188, lng: -16.4919 }
   },
   {
@@ -137,7 +137,7 @@ const discoveryCatalog = [
     price: 3000,
     accent: "bg-[#eef4ff]",
     iconLabel: "DLV",
-    iconSymbol: "🚚",
+    iconSymbol: "DELIVERY",
     coords: { lat: 16.0262, lng: -16.4992 }
   },
   {
@@ -152,7 +152,7 @@ const discoveryCatalog = [
     price: 12000,
     accent: "bg-[#fff2f7]",
     iconLabel: "BEAU",
-    iconSymbol: "💇",
+    iconSymbol: "BEAUTE",
     coords: { lat: 16.0149, lng: -16.5072 }
   },
   {
@@ -167,7 +167,7 @@ const discoveryCatalog = [
     price: 15000,
     accent: "bg-[#f6f0e6]",
     iconLabel: "WOOD",
-    iconSymbol: "🪑",
+    iconSymbol: "MEUBLE",
     coords: { lat: 16.0068, lng: -16.5205 }
   },
   {
@@ -182,7 +182,7 @@ const discoveryCatalog = [
     price: 8000,
     accent: "bg-[#e0f2fe]",
     iconLabel: "CAR",
-    iconSymbol: "🚐",
+    iconSymbol: "VAN",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -197,7 +197,7 @@ const discoveryCatalog = [
     price: 10000,
     accent: "bg-[#dbeafe]",
     iconLabel: "PIPE",
-    iconSymbol: "🔧",
+    iconSymbol: "OUTIL",
     coords: { lat: 16.018, lng: -16.3728 }
   },
   {
@@ -212,7 +212,7 @@ const discoveryCatalog = [
     price: 12000,
     accent: "bg-[#dcfce7]",
     iconLabel: "GARD",
-    iconSymbol: "🌱",
+    iconSymbol: "JARDIN",
     coords: { lat: 16.0312, lng: -16.5078 }
   },
   {
@@ -227,7 +227,7 @@ const discoveryCatalog = [
     price: 6000,
     accent: "bg-[#f3e8ff]",
     iconLabel: "TECH",
-    iconSymbol: "💻",
+    iconSymbol: "INFO",
     coords: { lat: 16.0567, lng: -16.4568 }
   },
   {
@@ -242,7 +242,7 @@ const discoveryCatalog = [
     price: 15000,
     accent: "bg-[#fef3c7]",
     iconLabel: "EDU",
-    iconSymbol: "📚",
+    iconSymbol: "EDU",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -257,7 +257,7 @@ const discoveryCatalog = [
     price: 20000,
     accent: "bg-[#fce7f3]",
     iconLabel: "CLEAN",
-    iconSymbol: "🧹",
+    iconSymbol: "MENAGE",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -272,21 +272,21 @@ const discoveryCatalog = [
     price: 25000,
     accent: "bg-[#fdf2f8]",
     iconLabel: "BABY",
-    iconSymbol: "👶",
+    iconSymbol: "GARDE",
     coords: { lat: 16.0244, lng: -16.5015 }
   }
 ]
 
 const serviceFamilies = [
-  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", iconLabel: "TA", iconSymbol: "🚘", route: "/ride" },
-  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", iconLabel: "AR", iconSymbol: "🧰", route: "/service" },
-  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", iconLabel: "FO", iconSymbol: "🍽️", route: "/service" },
-  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", iconLabel: "BE", iconSymbol: "💇", route: "/service" },
-  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", iconLabel: "DL", iconSymbol: "🛵", route: "/service" },
-  { key: "automotive", title: "Lavage Auto", subtitle: "Nettoyage vehicules", color: "bg-[#1260a1]", iconLabel: "CA", iconSymbol: "🚗", route: "/service" },
-  { key: "maintenance", title: "Maintenance", subtitle: "Reparations diverses", color: "bg-[#8b5cf6]", iconLabel: "MA", iconSymbol: "🔧", route: "/service" },
-  { key: "education", title: "Education", subtitle: "Cours et soutien", color: "bg-[#f59e0b]", iconLabel: "ED", iconSymbol: "📚", route: "/service" },
-  { key: "domestic", title: "Services Domestiques", subtitle: "Menage et garde", color: "bg-[#ec4899]", iconLabel: "DO", iconSymbol: "🏠", route: "/service" }
+  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", iconLabel: "TA", iconSymbol: "CAR", route: "/ride" },
+  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", iconLabel: "AR", iconSymbol: "SERVICE", route: "/service" },
+  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", iconLabel: "FO", iconSymbol: "FOOD", route: "/service" },
+  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", iconLabel: "BE", iconSymbol: "BEAUTE", route: "/service" },
+  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", iconLabel: "DL", iconSymbol: "LIVRAISON", route: "/service" },
+  { key: "automotive", title: "Lavage Auto", subtitle: "Nettoyage vehicules", color: "bg-[#1260a1]", iconLabel: "CA", iconSymbol: "CAR", route: "/service" },
+  { key: "maintenance", title: "Maintenance", subtitle: "Reparations diverses", color: "bg-[#8b5cf6]", iconLabel: "MA", iconSymbol: "OUTIL", route: "/service" },
+  { key: "education", title: "Education", subtitle: "Cours et soutien", color: "bg-[#f59e0b]", iconLabel: "ED", iconSymbol: "EDU", route: "/service" },
+  { key: "domestic", title: "Services Domestiques", subtitle: "Menage et garde", color: "bg-[#ec4899]", iconLabel: "DO", iconSymbol: "HOME", route: "/service" }
 ]
 
 const quickFilters = ["Ouvert maintenant", "Livraison", "Trajet rapide", "Artisan", "Beaute", "Livreur"]
@@ -511,7 +511,7 @@ const Home = () => {
                 </div>
               </div>
               <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-[#f3f8fc]">
-                <span>📍</span>
+                <span>PIN</span>
                 <span>{clientLocation.address || "Saint-Louis"}</span>
               </div>
             </div>
@@ -835,7 +835,7 @@ const Home = () => {
                 return (
                   <div key={item._id} className="flex items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 shadow-sm">
                     <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${isRide ? "bg-[#edf5fb]" : "bg-[#eefaf2]"}`}>
-                      {isRide ? "🚕" : item.category === "coiffure-beaute" ? "💇" : item.category === "livreur" ? "🛵" : "🧰"}
+                      {isRide ? "TAXI" : item.category === "coiffure-beaute" ? "BEAUTE" : item.category === "livreur" ? "LIVRAISON" : "SERVICE"}
                     </div>
                     <div className="min-w-0 flex-1 text-left">
                       <div className="truncate text-base font-bold text-[#16324f]">{title}</div>
@@ -860,3 +860,4 @@ const Home = () => {
 }
 
 export default Home
+

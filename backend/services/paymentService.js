@@ -130,8 +130,8 @@ class PaymentService {
       const driverId = ride.driver._id;
       const amount = ride.finalPrice || ride.estimatedPrice;
 
-      // Calculer la commission Yoonbi (1%)
-      const commission = Math.round(amount * 0.01);
+      // Calculer la commission Yoonbi (10%)
+      const commission = Math.round(amount * 0.1);
       const driverAmount = amount - commission;
 
       // Débiter le passager
@@ -220,8 +220,8 @@ class PaymentService {
       const providerId = serviceRequest.provider._id;
       const amount = serviceRequest.finalPrice || serviceRequest.estimatedPrice;
 
-      // Calculer la commission Yoonbi (1%)
-      const commission = Math.round(amount * 0.01);
+      // Calculer la commission Yoonbi (10%)
+      const commission = Math.round(amount * 0.1);
       const providerAmount = amount - commission;
 
       // Débiter le client

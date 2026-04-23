@@ -108,7 +108,7 @@ const LocationPicker = ({
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
             <circle cx="20" cy="20" r="18" fill="#10B981" stroke="white" stroke-width="3"/>
-            <text x="20" y="25" text-anchor="middle" fill="white" font-size="16" font-weight="bold">📍</text>
+            <text x="20" y="25" text-anchor="middle" fill="white" font-size="16" font-weight="bold">PIN</text>
           </svg>
         `),
         scaledSize: new google.maps.Size(40, 40),
@@ -202,7 +202,7 @@ const LocationPicker = ({
           disabled={isLoading || !address.trim()}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? '🔍' : 'Rechercher'}
+          {isLoading ? 'SEARCH' : 'Rechercher'}
         </button>
         {showCurrentLocation && (
           <button
@@ -210,7 +210,7 @@ const LocationPicker = ({
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             title="Utiliser ma position actuelle"
           >
-            📍
+            PIN
           </button>
         )}
       </div>
@@ -235,7 +235,7 @@ const LocationPicker = ({
       {selectedLocation && (
         <div className="bg-blue-50 p-3 rounded-md">
           <div className="flex items-center text-sm text-blue-700">
-            <span className="mr-2">📍</span>
+            <span className="mr-2">PIN</span>
             <div>
               <div className="font-medium">Position sélectionnée</div>
               <div className="text-xs text-blue-600">

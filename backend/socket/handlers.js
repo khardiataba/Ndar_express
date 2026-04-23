@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Enhanced Socket.io handlers for YOON WI
  * Complete real-time features: location tracking, ride matching, chat
  */
@@ -218,7 +218,7 @@ class SocketHandlers {
       })
 
       // Log emergency
-      console.error(`🚨 EMERGENCY on ride ${rideId}: ${message}`)
+      console.error(`ALERTE EMERGENCY on ride ${rideId}: ${message}`)
 
       return true
     } catch (error) {
@@ -229,3 +229,4 @@ class SocketHandlers {
 }
 
 module.exports = SocketHandlers
+

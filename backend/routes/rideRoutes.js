@@ -134,6 +134,13 @@ const getOtherPartyId = (ride, reporterId) => {
   return driverId || userId || null
 }
 
+const hasRegisteredBusForDriver = (user) => {
+  const vehicleType = String(user?.providerDetails?.vehicleType || "").toLowerCase()
+  const vehiclePlate = String(user?.providerDetails?.vehiclePlate || "").trim()
+  const looksLikeBus = /bus|minibus|autocar|transport/.test(vehicleType)
+  return looksLikeBus && Boolean(vehiclePlate)
+}
+
 const maybeSuspendUser = async (userId, reason) => {
   if (!userId) return null
 
@@ -208,7 +215,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
     }
 
     const rideTypeLabelByZone = {
-      police: "Bus Eleves - Jusqu'a Police",
+      marche: "Bus Eleves - Jusqu'au marche",
       ville: "Bus Eleves - Ville"
     }
 
@@ -278,7 +285,8 @@ router.post("/estimate", authMiddleware, requireVerified, async (req, res) => {
           try {
             const json = JSON.parse(data)
             if (!json.routes || !json.routes.length) {
-              return res.json(fallbackEstimate)
+              const suggestedPrice = computeRideFare(fallbackEstimate.distanceKm, fallbackEstimate.durationMin)
+              return res.json({ ...fallbackEstimate, suggestedPrice, ...rideCommission(suggestedPrice) })
             }
             const route = json.routes[0]
             const distanceKm = Math.round((route.distance / 1000) * 10) / 10
@@ -377,6 +385,12 @@ router.patch(
       if (!ride) return res.status(404).json({ message: "Course non trouvée" })
       if (ride.status !== "pending") {
         return res.status(400).json({ message: "Course non disponible" })
+      }
+
+      if (ride.rideCategory === "bus_student" && !hasRegisteredBusForDriver(req.user)) {
+        return res.status(403).json({
+          message: "Cette course bus est reservee aux chauffeurs avec bus inscrit (type bus/minibus + immatriculation)."
+        })
       }
 
       ride.status = "accepted"

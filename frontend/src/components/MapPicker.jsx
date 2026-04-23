@@ -10,17 +10,33 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png"
 })
 
-const createEmojiIcon = (emoji, background) =>
+const iconSvgByType = {
+  pin: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><path d="M12 21s-6-5.4-6-10a6 6 0 1 1 12 0c0 4.6-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><path d="M4 3v18"/><path d="M4 4h11l-2 4 2 4H4"/></svg>',
+  car: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><path d="M3 13l2-5h14l2 5v5h-2v-2H5v2H3z"/><circle cx="7" cy="16" r="1.5"/><circle cx="17" cy="16" r="1.5"/></svg>',
+  dot: '<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><circle cx="12" cy="12" r="4"/></svg>'
+}
+
+const resolveIconType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (!normalized) return "dot"
+  if (normalized.includes("pin")) return "pin"
+  if (normalized.includes("flag")) return "flag"
+  if (normalized.includes("car")) return "car"
+  return "dot"
+}
+
+const createMapIcon = (iconType, background) =>
   L.divIcon({
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;background:${background};box-shadow:0 10px 25px rgba(22,50,79,0.18);font-size:18px;border:3px solid #fff;">${emoji}</div>`,
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;background:${background};box-shadow:0 10px 25px rgba(22,50,79,0.18);border:3px solid #fff;">${iconSvgByType[resolveIconType(iconType)] || iconSvgByType.dot}</div>`,
     className: "",
     iconSize: [38, 38],
     iconAnchor: [19, 19]
   })
 
-const pickupIcon = createEmojiIcon("📍", "#165c96")
-const destinationIcon = createEmojiIcon("🏁", "#18c56e")
-const carIcon = createEmojiIcon("🚗", "#d7ae49")
+const pickupIcon = createMapIcon("pin", "#165c96")
+const destinationIcon = createMapIcon("flag", "#18c56e")
+const carIcon = createMapIcon("car", "#d7ae49")
 
 const ChangeView = ({ center, pickup, destination, routeGeometry }) => {
   const map = useMap()
@@ -119,7 +135,7 @@ const MapPicker = ({
             <Marker
               key={marker.id || `${marker.lat}-${marker.lng}`}
               position={[marker.lat, marker.lng]}
-              icon={createEmojiIcon(marker.emoji || "•", marker.background || "#165c96")}
+              icon={createMapIcon(marker.icon || marker.emoji || "dot", marker.background || "#165c96")}
               title={marker.label || marker.name || "Prestataire"}
             />
           ))}

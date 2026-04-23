@@ -55,13 +55,13 @@ const WalletCard = ({ className = '' }) => {
 
   const getTransactionIcon = (type) => {
     const icons = {
-      credit: '💰',
-      debit: '💸',
+      credit: 'WALLET',
+      debit: 'DEBIT',
       refund: '↩️',
-      bonus: '🎁',
-      withdrawal: '🏦'
+      bonus: 'BONUS',
+      withdrawal: 'BANK'
     };
-    return icons[type] || '💳';
+    return icons[type] || 'CARD';
   };
 
   const getTransactionColor = (type) => {
@@ -116,14 +116,14 @@ const WalletCard = ({ className = '' }) => {
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button className="flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
-              <span className="text-lg mr-2">💳</span>
+              <span className="text-lg mr-2">CARD</span>
               <span className="text-sm font-medium">Recharger</span>
             </button>
             <button
               onClick={() => setShowHistory(!showHistory)}
               className="flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              <span className="text-lg mr-2">📊</span>
+              <span className="text-lg mr-2">STATS</span>
               <span className="text-sm font-medium">Historique</span>
             </button>
           </div>

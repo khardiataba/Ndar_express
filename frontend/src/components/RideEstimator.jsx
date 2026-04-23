@@ -9,9 +9,9 @@ const RideEstimator = ({
   onRideRequest,
   className = '',
   vehicleTypes = [
-    { id: 'standard', name: 'Standard', icon: '🚗', multiplier: 1 },
-    { id: 'premium', name: 'Premium', icon: '🚙', multiplier: 1.5 },
-    { id: 'van', name: 'Van', icon: '🚐', multiplier: 2 }
+    { id: 'standard', name: 'Standard', icon: 'CAR', multiplier: 1 },
+    { id: 'premium', name: 'Premium', icon: 'SUV', multiplier: 1.5 },
+    { id: 'van', name: 'Van', icon: 'VAN', multiplier: 2 }
   ]
 }) => {
   const [pickupLocation, setPickupLocation] = useState(null);

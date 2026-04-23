@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react"
-import api from "../api"
 
 const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
   const [providerInfo, setProviderInfo] = useState(null)
@@ -18,7 +17,7 @@ const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
     }).format(price)
   }
 
-  const vehicleTypeLabel = vehicle.vehicleType === "small" ? "🏍️ Petit véhicule" : "🚐 Grand véhicule"
+  const vehicleTypeLabel = vehicle.vehicleType === "small" ? "Petit vehicule" : "Grand vehicule"
 
   return (
     <div
@@ -33,7 +32,7 @@ const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
         </div>
         {vehicle.rating && (
           <div className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 rounded-full px-3 py-1 text-sm font-semibold">
-            ⭐ {vehicle.rating.toFixed(1)}
+            RATING {vehicle.rating.toFixed(1)}
           </div>
         )}
       </div>
@@ -46,7 +45,7 @@ const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
         </p>
 
         {vehicle.capacity?.passengers && (
-          <p className="text-sm text-gray-600 mb-2">👥 {vehicle.capacity.passengers} passagers</p>
+          <p className="text-sm text-gray-600 mb-2">{vehicle.capacity.passengers} passagers</p>
         )}
 
         {vehicle.features && vehicle.features.length > 0 && (
@@ -80,15 +79,13 @@ const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
             )}
             <div className="flex-1">
               <p className="font-semibold text-sm">{providerInfo.name}</p>
-              {providerInfo.rating && <p className="text-xs text-yellow-600">⭐ {providerInfo.rating.toFixed(1)}</p>}
+              {providerInfo.rating && <p className="text-xs text-yellow-600">RATING {providerInfo.rating.toFixed(1)}</p>}
             </div>
           </div>
         )}
 
         {vehicle.insuranceIncluded && (
-          <div className="mt-3 bg-green-50 border border-green-200 rounded px-2 py-1 text-xs text-green-700">
-            ✅ Assurance incluse
-          </div>
+          <div className="mt-3 bg-green-50 border border-green-200 rounded px-2 py-1 text-xs text-green-700">Assurance incluse</div>
         )}
       </div>
     </div>
@@ -96,3 +93,4 @@ const VehicleCard = ({ vehicle, onSelect, showProviderInfo = false }) => {
 }
 
 export default VehicleCard
+

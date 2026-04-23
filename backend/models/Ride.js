@@ -65,7 +65,7 @@ const rideSchema = new mongoose.Schema({
     default: "pending"
   },
   price: { type: Number, required: true },
-  appCommissionPercent: { type: Number, default: 1 },
+  appCommissionPercent: { type: Number, default: 10 },
   appCommissionAmount: { type: Number, default: 0 },
   providerNetAmount: { type: Number, default: 0 },
   vehicleType: { type: String, default: "YOONWI Classic" },
@@ -76,7 +76,7 @@ const rideSchema = new mongoose.Schema({
   },
   busZone: {
     type: String,
-    enum: ["", "police", "ville"],
+    enum: ["", "marche", "police", "ville"],
     default: ""
   },
   busOptions: {

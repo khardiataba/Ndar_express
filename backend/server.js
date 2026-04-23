@@ -1,4 +1,4 @@
-const express = require("express")
+﻿const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const path = require("path")
@@ -63,7 +63,7 @@ app.use(generalLimiter)
 
 // Health Check Route
 app.get("/", (req, res) => {
-  res.json({ message: "✅ Ndar Express API - Saint-Louis", status: "OK", version: "1.0" })
+  res.json({ message: "OK YOON WI API - Saint-Louis", status: "OK", version: "1.0" })
 })
 
 // Exposer les fichiers uploadés (cartes d'identité / permis)
@@ -106,7 +106,7 @@ const startServer = async () => {
     console.log("MongoDB connecté")
 
     server.listen(PORT, () => {
-      console.log(`🚀 Serveur lancé sur port ${PORT} avec Socket.io`)
+      console.log(`GO Serveur lancé sur port ${PORT} avec Socket.io`)
     })
   } catch (err) {
     console.error("Impossible de démarrer le serveur:", err.message)
@@ -115,3 +115,4 @@ const startServer = async () => {
 }
 
 startServer()
+

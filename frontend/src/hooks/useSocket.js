@@ -29,13 +29,13 @@ const useSocket = () => {
 
       // Gestionnaires d'événements
       socket.on('connect', () => {
-        console.log('🔌 Connecté au serveur Socket.io');
+        console.log('SOCKET Connecté au serveur Socket.io');
         setIsConnected(true);
         setConnectionError(null);
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('🔌 Déconnecté du serveur Socket.io:', reason);
+        console.log('SOCKET Déconnecté du serveur Socket.io:', reason);
         setIsConnected(false);
       });
 
@@ -47,18 +47,18 @@ const useSocket = () => {
 
       // Événements de course
       socket.on('ride:new-request', (data) => {
-        console.log('🚗 Nouvelle demande de course:', data);
+        console.log('CAR Nouvelle demande de course:', data);
         // Émettre un événement personnalisé pour les composants
         window.dispatchEvent(new CustomEvent('ride:new-request', { detail: data }));
       });
 
       socket.on('ride:request-accepted', (data) => {
-        console.log('✅ Course acceptée:', data);
+        console.log('OK Course acceptée:', data);
         window.dispatchEvent(new CustomEvent('ride:request-accepted', { detail: data }));
       });
 
       socket.on('ride:status-update', (data) => {
-        console.log('📍 Mise à jour statut course:', data);
+        console.log('PIN Mise à jour statut course:', data);
         window.dispatchEvent(new CustomEvent('ride:status-update', { detail: data }));
       });
 
@@ -69,13 +69,13 @@ const useSocket = () => {
 
       // Événements de chat
       socket.on('chat:new-message', (data) => {
-        console.log('💬 Nouveau message:', data);
+        console.log('MESSAGE Nouveau message:', data);
         window.dispatchEvent(new CustomEvent('chat:new-message', { detail: data }));
       });
 
       // Notifications
       socket.on('notification:new', (data) => {
-        console.log('🔔 Nouvelle notification:', data);
+        console.log('NOTIF Nouvelle notification:', data);
         window.dispatchEvent(new CustomEvent('notification:new', { detail: data }));
 
         // Afficher une notification système si supportée

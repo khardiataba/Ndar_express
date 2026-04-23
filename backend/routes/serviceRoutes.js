@@ -332,7 +332,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
       clientBudget: 0,
       price: 0,
       quotedPrice: 0,
-      appCommissionPercent: 0,
+      appCommissionPercent: 10,
       appCommissionAmount: 0,
       providerNetAmount: 0,
       platformContributionStatus: "due",
@@ -883,25 +883,17 @@ router.post("/:id/verify-contribution", authMiddleware, requireVerified, async (
       return res.status(403).json({ message: "Accès non autorisé" })
     }
 
-    // Check if contribution is already paid
-    if (request.platformContributionStatus === "paid") {
-      return res.json({ success: true, message: "Contribution déjà payée" })
-    }
-
-    // Mark as paid if service is accepted
-    if (request.status === "accepted" || request.status === "in_progress" || request.status === "completed") {
-      request.platformContributionStatus = "paid"
-      request.platformContributionPaidAt = new Date()
-      await request.save()
-      
-      return res.json({ 
-        success: true, 
-        message: "Contribution vérifiée et marquée payée",
-        amount: request.appCommissionAmount
-      })
-    }
-
-    return res.status(400).json({ message: "Service doit être accepté pour vérifier la contribution" })
+    // Read-only verification endpoint: no automatic state mutation.
+    return res.json({
+      success: request.platformContributionStatus === "paid",
+      message:
+        request.platformContributionStatus === "paid"
+          ? "Contribution deja payee"
+          : "Contribution non reglee",
+      status: request.platformContributionStatus,
+      amount: request.appCommissionAmount,
+      amountPaid: request.platformContributionAmountPaid || 0
+    })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })

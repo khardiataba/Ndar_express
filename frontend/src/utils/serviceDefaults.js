@@ -1,22 +1,22 @@
 // frontend/src/utils/serviceDefaults.js
 
 export const defaultServiceImages = {
-  "rides": "🚗",
-  "pâtissier": "🍰",
-  "restaurant": "🍽️",
-  "électricien": "💡",
-  "livreur": "🚚",
-  "coiffure-beaute": "💇",
-  "menuisier": "🪑",
-  "maçon": "🧱",
-  "peintre": "🎨",
-  "lavage-automobile": "🚗",
-  "plomberie": "🔧",
-  "jardinage": "🌱",
-  "menuiserie": "🪚",
-  "macon": "🧱",
-  "beaute": "💄",
-  "food": "🍕",
+  "rides": "CAR",
+  "pâtissier": "BAKERY",
+  "restaurant": "FOOD",
+  "électricien": "ELECTRICITE",
+  "livreur": "DELIVERY",
+  "coiffure-beaute": "BEAUTE",
+  "menuisier": "MEUBLE",
+  "maçon": "MACON",
+  "peintre": "PEINTURE",
+  "lavage-automobile": "CAR",
+  "plomberie": "OUTIL",
+  "jardinage": "JARDIN",
+  "menuiserie": "MENUISERIE",
+  "macon": "MACON",
+  "beaute": "MAQUILLAGE",
+  "food": "PIZZA",
 };
 
 export const getServiceImageUrl = (category, type) => {
@@ -31,7 +31,7 @@ export const getServiceImageUrl = (category, type) => {
   }
   
   // Fallback
-  return "🔧";
+  return "OUTIL";
 };
 
 export const enrichItemWithImage = (item) => {
@@ -45,3 +45,4 @@ export const enrichItemWithImage = (item) => {
 export const enrichItemsWithImages = (items) => {
   return items.map(enrichItemWithImage);
 };
+

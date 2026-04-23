@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import api from "../api"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
+import useSocket from "../hooks/useSocket"
+import useShakeDetection from "../hooks/useShakeDetection"
 
 const formatRideLabel = (ride) => {
   const pickup = ride.pickup?.name || ride.pickup?.address || "Depart"
@@ -20,6 +23,7 @@ const isInLast7Days = (date, now) => {
 
 const DriverDashboard = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [available, setAvailable] = useState([])
   const [myRides, setMyRides] = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,8 +33,10 @@ const DriverDashboard = () => {
   const [actionError, setActionError] = useState(null)
   const [busyRideId, setBusyRideId] = useState(null)
   const [sosBusyRideId, setSosBusyRideId] = useState(null)
+  const { isConnected, goOnline, updateLocation } = useSocket()
+  const activeRideForSOS = myRides.find((ride) => ride.status === "accepted" || ride.status === "ongoing") || null
 
-  const fetchRides = async () => {
+  const fetchRides = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -42,7 +48,7 @@ const DriverDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const acceptRide = async (id) => {
     try {
@@ -81,7 +87,7 @@ const DriverDashboard = () => {
     }
   }
 
-  const sendRideSOS = async (id) => {
+  const sendRideSOS = useCallback(async (id) => {
     try {
       setSosBusyRideId(id)
       setActionError(null)
@@ -101,11 +107,66 @@ const DriverDashboard = () => {
     } finally {
       setSosBusyRideId(null)
     }
-  }
+  }, [fetchRides])
+
+  const sendShakeSOS = useCallback(async () => {
+    if (!activeRideForSOS?._id) return
+    await sendRideSOS(activeRideForSOS._id)
+  }, [activeRideForSOS, sendRideSOS])
+
+  const { shakeDetected, countdown, clearShake, confirmShake } = useShakeDetection(sendShakeSOS)
 
   useEffect(() => {
     fetchRides()
-  }, [])
+  }, [fetchRides])
+
+  useEffect(() => {
+    if (!isConnected || !user) return
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        goOnline(
+          {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          },
+          user?.providerDetails?.vehicleType || "standard"
+        )
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }, [isConnected, goOnline, user])
+
+  useEffect(() => {
+    if (!isConnected) return
+    if (!navigator.geolocation) return
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        updateLocation(position.coords.latitude, position.coords.longitude, position.coords.heading, position.coords.speed)
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [isConnected, updateLocation])
+
+  useEffect(() => {
+    const refreshOnSocketEvent = () => {
+      fetchRides()
+    }
+
+    window.addEventListener("ride:new-request", refreshOnSocketEvent)
+    window.addEventListener("ride:status-update", refreshOnSocketEvent)
+
+    return () => {
+      window.removeEventListener("ride:new-request", refreshOnSocketEvent)
+      window.removeEventListener("ride:status-update", refreshOnSocketEvent)
+    }
+  }, [fetchRides])
 
   const revenue = useMemo(() => {
     const now = new Date()
@@ -228,7 +289,7 @@ const DriverDashboard = () => {
                             <span>{ride.durationMin ? `${ride.durationMin} min` : "Temps estime"}</span>
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Commission appli: {ride.appCommissionPercent || 1}% ({(ride.appCommissionAmount || 0).toLocaleString()} F)</span>
+                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Commission appli: {ride.appCommissionPercent || 10}% ({(ride.appCommissionAmount || 0).toLocaleString()} F)</span>
                             <span className="rounded-full bg-[#eefaf2] px-3 py-2 text-[#178b55]">Net chauffeur: {(ride.providerNetAmount || Math.max(0, (ride.price || 0) - (ride.appCommissionAmount || 0))).toLocaleString()} F</span>
                           </div>
                         </div>
@@ -260,7 +321,7 @@ const DriverDashboard = () => {
                           <div className="font-semibold text-[#16324f]">{ride.vehicleType}</div>
                           <div className="mt-1 text-sm text-[#5a8fd1]">{formatRideLabel(ride)}</div>
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Commission appli: {ride.appCommissionPercent || 1}% ({(ride.appCommissionAmount || 0).toLocaleString()} F)</span>
+                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Commission appli: {ride.appCommissionPercent || 10}% ({(ride.appCommissionAmount || 0).toLocaleString()} F)</span>
                             <span className="rounded-full bg-[#eefaf2] px-3 py-2 text-[#178b55]">Net chauffeur: {(ride.providerNetAmount || Math.max(0, (ride.price || 0) - (ride.appCommissionAmount || 0))).toLocaleString()} F</span>
                           </div>
                         </div>
@@ -291,7 +352,7 @@ const DriverDashboard = () => {
                               {busyRideId === ride._id ? "Vérification..." : "Démarrer"}
                             </button>
                           </div>
-                          <p className="mt-2 text-xs text-[#5a8fd1]\">
+                          <p className="mt-2 text-xs text-[#5a8fd1]">
                             La course ne peut commencer que si le PIN transmis par le client est correct.
                           </p>
                         </div>
@@ -328,6 +389,22 @@ const DriverDashboard = () => {
           </>
         )}
       </div>
+      {shakeDetected && activeRideForSOS && (
+        <div className="fixed bottom-24 left-4 right-4 z-50">
+          <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
+            <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
+            <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
+            <div className="flex justify-center gap-3">
+              <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
+                Envoyer maintenant
+              </button>
+              <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -110,7 +110,7 @@ const Welcome = () => {
                     <div className="mt-1 text-base font-bold text-[#16324f]">{option.title}</div>
                   </div>
                   <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${role === option.value ? "bg-white text-[#1260a1]" : "bg-[#f6efe4]"}`}>
-                    {option.value === "client" ? "🚕" : option.value === "provider" ? "🧰" : option.value === "driver" ? "🚘" : "🧩"}
+                    {option.value === "client" ? "TAXI" : option.value === "provider" ? "SERVICE" : option.value === "driver" ? "CAR" : "AUTRES"}
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-[#5a8fd1]">{option.description}</p>
@@ -138,3 +138,4 @@ const Welcome = () => {
 }
 
 export default Welcome
+

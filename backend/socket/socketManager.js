@@ -1,4 +1,4 @@
-// backend/socket/socketManager.js
+﻿// backend/socket/socketManager.js
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -23,7 +23,7 @@ class SocketManager {
     this.io.use(this.authenticateSocket.bind(this));
     this.setupSocketHandlers();
 
-    console.log('🔌 Socket.io initialized');
+    console.log('SOCKET Socket.io initialized');
   }
 
   async authenticateSocket(socket, next) {
@@ -52,7 +52,7 @@ class SocketManager {
 
   setupSocketHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`👤 User ${socket.userId} connected (${socket.userRole})`);
+      console.log(`USER User ${socket.userId} connected (${socket.userRole})`);
 
       // Register user connection
       this.connectedUsers.set(socket.userId.toString(), socket.id);
@@ -116,7 +116,7 @@ class SocketManager {
     });
 
     socket.emit('driver:online-success', { message: 'Driver is now online' });
-    console.log(`🚗 Driver ${socket.userId} went online`);
+    console.log(`CAR Driver ${socket.userId} went online`);
   }
 
   handleDriverLocationUpdate(socket, data) {
@@ -243,9 +243,6 @@ class SocketManager {
 
   handleRideAccept(socket, data) {
     const { requestId } = data;
-
-    // Find the ride request and update it
-    // This would need to be implemented with proper ride management
     socket.emit('ride:accept-success', { requestId });
   }
 
@@ -276,7 +273,7 @@ class SocketManager {
   }
 
   handleDisconnect(socket) {
-    console.log(`👤 User ${socket.userId} disconnected`);
+    console.log(`USER User ${socket.userId} disconnected`);
 
     // Remove from connected users
     this.connectedUsers.delete(socket.userId.toString());
@@ -285,9 +282,6 @@ class SocketManager {
     if (socket.userRole === 'driver') {
       this.activeDrivers.delete(socket.userId.toString());
     }
-
-    // Handle active rides cleanup
-    // This would need more implementation
   }
 
   findAvailableDrivers(pickupLocation, vehicleType) {

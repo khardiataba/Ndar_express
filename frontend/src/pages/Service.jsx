@@ -4,14 +4,14 @@ import api from "../api"
 import MapPicker from "../components/MapPicker"
 
 const categories = [
-  { value: "menuisier", label: "Menuiserie", iconSymbol: "🪚", hint: "Portes, meubles, dressing", family: "artisan" },
-  { value: "ma\u00e7on", label: "Maconnerie", iconSymbol: "🧱", hint: "Murs, carrelage, terrasse", family: "artisan" },
-  { value: "peintre", label: "Peinture", iconSymbol: "🎨", hint: "Finition interieure et facade", family: "artisan" },
-  { value: "\u00e9lectricien", label: "Electricite", iconSymbol: "💡", hint: "Pannes et installations", family: "artisan" },
-  { value: "p\u00e2tissier", label: "Food & Bakery", iconSymbol: "🥐", hint: "Gateaux, traiteur, livraison", family: "food" },
-  { value: "coiffure-beaute", label: "Coiffure & Beaute", iconSymbol: "💇", hint: "Salon, tresses, maquillage", family: "beauty" },
-  { value: "livreur", label: "Livraison Express", iconSymbol: "🛵", hint: "Documents, colis et depots", family: "delivery" },
-  { value: "autres", label: "Autres", iconSymbol: "🧩", hint: "Autres besoins specifiques", family: "other" }
+  { value: "menuisier", label: "Menuiserie", iconSymbol: "MENUISERIE", hint: "Portes, meubles, dressing", family: "artisan" },
+  { value: "ma\u00e7on", label: "Maconnerie", iconSymbol: "MACON", hint: "Murs, carrelage, terrasse", family: "artisan" },
+  { value: "peintre", label: "Peinture", iconSymbol: "PEINTURE", hint: "Finition interieure et facade", family: "artisan" },
+  { value: "\u00e9lectricien", label: "Electricite", iconSymbol: "ELECTRICITE", hint: "Pannes et installations", family: "artisan" },
+  { value: "p\u00e2tissier", label: "Food & Bakery", iconSymbol: "FOOD", hint: "Gateaux, traiteur, livraison", family: "food" },
+  { value: "coiffure-beaute", label: "Coiffure & Beaute", iconSymbol: "BEAUTE", hint: "Salon, tresses, maquillage", family: "beauty" },
+  { value: "livreur", label: "Livraison Express", iconSymbol: "LIVRAISON", hint: "Documents, colis et depots", family: "delivery" },
+  { value: "autres", label: "Autres", iconSymbol: "AUTRES", hint: "Autres besoins specifiques", family: "other" }
 ]
 
 const categoryFamilyByValue = categories.reduce((acc, item) => {
@@ -629,3 +629,4 @@ const Service = () => {
 }
 
 export default Service
+

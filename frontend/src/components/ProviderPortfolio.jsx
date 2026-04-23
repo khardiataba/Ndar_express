@@ -72,7 +72,7 @@ const ProviderPortfolio = () => {
               : "border-transparent text-gray-600 hover:text-gray-800"
           }`}
         >
-          📸 Galerie ({gallery?.totalImages || 0} photos)
+          GALERIE Galerie ({gallery?.totalImages || 0} photos)
         </button>
         <button
           onClick={() => setActiveTab("upload")}
@@ -82,7 +82,7 @@ const ProviderPortfolio = () => {
               : "border-transparent text-gray-600 hover:text-gray-800"
           }`}
         >
-          📤 Ajouter des photos
+          UPLOAD Ajouter des photos
         </button>
       </div>
 
@@ -103,7 +103,7 @@ const ProviderPortfolio = () => {
                         onClick={() => handleDeleteItem(item._id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded transition"
                       >
-                        🗑️ Supprimer
+                        DELETE Supprimer
                       </button>
                     </div>
                     <div className="absolute top-2 left-2">
@@ -121,7 +121,7 @@ const ProviderPortfolio = () => {
                 onClick={() => setActiveTab("upload")}
                 className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                📤 Ajouter une photo
+                UPLOAD Ajouter une photo
               </button>
             </div>
           )}
@@ -136,3 +136,4 @@ const ProviderPortfolio = () => {
 }
 
 export default ProviderPortfolio
+

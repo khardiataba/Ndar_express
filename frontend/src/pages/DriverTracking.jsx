@@ -1,18 +1,15 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useAuth } from "../context/AuthContext"
 import { useToast } from "../context/ToastContext"
 import MapPicker from "../components/MapPicker"
 import api from "../api"
 import useSocket from "../hooks/useSocket"
 import useShakeDetection from "../hooks/useShakeDetection"
-import SOSModal from "../components/SOSModal"
 
 
 const DriverTracking = () => {
   const { rideId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { showToast } = useToast()
 
   const [ride, setRide ] = useState(null)
@@ -24,20 +21,56 @@ const DriverTracking = () => {
   const [eta, setEta] = useState(null)
   const [distance, setDistance] = useState(null)
 
-  const [showSOSModal, setShowSOSModal] = useState(false)
+  const sendEmergencyAlert = useCallback(async () => {
+    try {
+      const loc = await new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null)
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              name: "Position SOS",
+              address: "Urgence detectee"
+            })
+          },
+          () => resolve(null),
+          { timeout: 5000 }
+        )
+      })
 
-  const handleShakeSOS = () => {
-    setShowSOSModal(true)
-  }
+      await api.post(`/rides/${rideId}/safety-report`, {
+        type: "sos_shake",
+        message: "SOS chauffeur detecte apres secousses anormales",
+        location: loc
+      })
+      showToast("Alerte SOS envoyee.", "success")
+    } catch (sosError) {
+      showToast(sosError.response?.data?.message || "Impossible d'envoyer le SOS.", "error")
+    }
+  }, [rideId, showToast])
 
 
-  // Request location permission on mount
-  useEffect(() => {
-    requestLocationPermission()
-    fetchRideData()
-  }, [rideId])
+  const startTrackingLocation = useCallback(() => {
+    if (!navigator.geolocation) return
 
-  const requestLocationPermission = async () => {
+    // Continuous location tracking
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const loc = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        }
+        setClientLocation(loc)
+      },
+      (error) => console.warn("Erreur localisation:", error),
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [])
+
+  const requestLocationPermission = useCallback(async () => {
     try {
       if (!navigator.geolocation) {
         setLocationPermission(false)
@@ -56,7 +89,7 @@ const DriverTracking = () => {
       }).catch(() => {
         // Fallback for non-permission API browsers
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          () => {
             setLocationPermission(true)
             startTrackingLocation()
           },
@@ -70,28 +103,9 @@ const DriverTracking = () => {
       console.error("Erreur permission localisation:", error)
       setLocationPermission(false)
     }
-  }
+  }, [showToast, startTrackingLocation])
 
-  const startTrackingLocation = () => {
-    if (!navigator.geolocation) return
-
-    // Continuous location tracking
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const loc = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        }
-        setClientLocation(loc)
-      },
-      (error) => console.warn("Erreur localisation:", error),
-      { enableHighAccuracy: true, maximumAge: 10000 }
-    )
-
-    return () => navigator.geolocation.clearWatch(watchId)
-  }
-
-  const fetchRideData = async () => {
+  const fetchRideData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await api.get(`/rides/${rideId}`)
@@ -108,12 +122,36 @@ const DriverTracking = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [rideId, showToast])
+
+  // Request location permission and ride details when page mounts/ride changes
+  useEffect(() => {
+    requestLocationPermission()
+    fetchRideData()
+  }, [requestLocationPermission, fetchRideData])
 
   // Socket listener for driver location updates
   useSocket()
   
-  const { shakeDetected, clearShake } = useShakeDetection(handleShakeSOS)
+  const { shakeDetected, clearShake, countdown, confirmShake } = useShakeDetection(sendEmergencyAlert)
+
+  useEffect(() => {
+    const handleDriverLocationUpdate = (event) => {
+      const loc = event?.detail?.location
+      if (!loc) return
+
+      const lat = loc.lat ?? loc.latitude
+      const lng = loc.lng ?? loc.longitude
+      if (typeof lat === "number" && typeof lng === "number") {
+        setDriverLocation({ lat, lng })
+      }
+    }
+
+    window.addEventListener("driver:location-update", handleDriverLocationUpdate)
+    return () => {
+      window.removeEventListener("driver:location-update", handleDriverLocationUpdate)
+    }
+  }, [])
 
 
   useEffect(() => {
@@ -213,11 +251,11 @@ const DriverTracking = () => {
                 <p className="text-sm text-[#d7ae49]">Chauffeur YOON WI</p>
                 <div className="mt-2 flex gap-2">
                   <span className="inline-block px-3 py-1 bg-[#18c56e]/20 text-[#18c56e] text-xs font-semibold rounded-full">
-                    ✓ Vérifié
+                    Verifie
                   </span>
                   {driver.rating && (
                     <span className="inline-block px-3 py-1 bg-[#ffd700]/20 text-[#ffd700] text-xs font-semibold rounded-full">
-                      ⭐ {driver.rating.toFixed(1)}
+                      RATING {driver.rating.toFixed(1)}
                     </span>
                   )}
                 </div>
@@ -348,35 +386,26 @@ const DriverTracking = () => {
       
       {shakeDetected && (
         <div className="fixed bottom-24 left-4 right-4 z-50">
-          <div className="bg-yellow-500 text-white p-4 rounded-2xl text-center shadow-2xl animate-bounce">
-            <div className="font-bold text-lg mb-2">🚨 SHAKE DÉTECTÉ</div>
-            <div className="text-sm mb-4">Secouez encore pour SOS d'urgence</div>
-            <button 
-              onClick={handleShakeSOS}
-              className="bg-red-600 px-6 py-3 rounded-xl font-bold text-white text-lg"
-            >
-              SOS URGENCE
-            </button>
-            <button 
-              onClick={clearShake}
-              className="ml-4 text-white underline text-sm"
-            >
-              Ignorer
-            </button>
+          <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
+            <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
+            <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
+            <div className="flex justify-center gap-3">
+              <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
+                Envoyer maintenant
+              </button>
+              <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <SOSModal 
-        isOpen={showSOSModal} 
-        onClose={() => setShowSOSModal(false)}
-        rideId={rideId}
-        userRole="driver" 
-      />
     </div>
   )
 }
 
 
 export default DriverTracking
+
 

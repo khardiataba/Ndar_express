@@ -2,49 +2,49 @@
 
 const serviceImageMap = {
   menuisier: {
-    emoji: "🪚",
-    icon: "🪑",
+    emoji: "MENUISERIE",
+    icon: "MEUBLE",
     color: "#8B4513",
     description: "Menuiserie"
   },
   maçon: {
-    emoji: "🧱",
-    icon: "🏗️",
+    emoji: "MACON",
+    icon: "CHANTIER",
     color: "#A9714F",
     description: "Maçonnerie"
   },
   peintre: {
-    emoji: "🎨",
-    icon: "🎭",
+    emoji: "PEINTURE",
+    icon: "ART",
     color: "#FF6B6B",
     description: "Peinture"
   },
   électricien: {
-    emoji: "💡",
+    emoji: "ELECTRICITE",
     icon: "⚡",
     color: "#FFD700",
     description: "Électricité"
   },
   pâtissier: {
-    emoji: "🥐",
-    icon: "🍰",
+    emoji: "FOOD",
+    icon: "BAKERY",
     color: "#FF69B4",
     description: "Food & Bakery"
   },
   "coiffure-beaute": {
-    emoji: "💇",
-    icon: "💄",
+    emoji: "BEAUTE",
+    icon: "MAQUILLAGE",
     color: "#DA70D6",
     description: "Coiffure & Beauté"
   },
   livreur: {
-    emoji: "🛵",
-    icon: "📦",
+    emoji: "LIVRAISON",
+    icon: "COLIS",
     color: "#FF8C00",
     description: "Livraison"
   },
   autres: {
-    emoji: "🧩",
+    emoji: "AUTRES",
     icon: "⚙️",
     color: "#4169E1",
     description: "Autres"
@@ -84,3 +84,4 @@ export const getServiceColor = (category) => {
 export const getServiceEmoji = (category) => {
   return getServiceImage(category).emoji
 }
+

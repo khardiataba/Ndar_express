@@ -51,8 +51,8 @@ const reverseGeocode = async ({ lat, lng }) => {
 const formatCompactAddress = (place) => place?.address || place?.name || "Adresse indisponible"
 
 const BUS_ZONE_OPTIONS = [
-  { value: "police", label: "Jusqu'a Police", oldFare: 100, fare: 150, note: "Trajet court" },
-  { value: "ville", label: "Ville", oldFare: 150, fare: 200, note: "Trajet centre-ville" }
+  { value: "marche", label: "Jusqu'au marche", fare: 150, note: "Trajet court" },
+  { value: "ville", label: "Ville", fare: 200, note: "Trajet en ville" }
 ]
 
 const BUS_SUBSCRIPTION_OPTIONS = [
@@ -64,9 +64,9 @@ const BUS_SUBSCRIPTION_OPTIONS = [
 
 const computeCommissionPreview = (grossAmount) => {
   const safeGross = Math.max(0, Number(grossAmount) || 0)
-  const appCommissionAmount = Math.max(0, Math.round((safeGross * 1) / 100))
+  const appCommissionAmount = Math.max(0, Math.round((safeGross * 10) / 100))
   return {
-    appCommissionPercent: 1,
+    appCommissionPercent: 10,
     appCommissionAmount,
     providerNetAmount: Math.max(0, safeGross - appCommissionAmount)
   }
@@ -89,8 +89,8 @@ const Ride = () => {
   const [routeGeometry, setRouteGeometry] = useState([])
   const [price, setPrice] = useState(2500)
   const [rideMode, setRideMode] = useState("standard")
-  const [busZone, setBusZone] = useState("police")
-  const [appCommissionPercent, setAppCommissionPercent] = useState(1)
+  const [busZone, setBusZone] = useState("marche")
+  const [appCommissionPercent, setAppCommissionPercent] = useState(10)
   const [appCommissionAmount, setAppCommissionAmount] = useState(0)
   const [driverNetAmount, setDriverNetAmount] = useState(0)
   const [vehicleType, setVehicleType] = useState("YOONWI Classic")
@@ -118,7 +118,7 @@ const Ride = () => {
     setDistanceKm(null)
     setDurationMin(null)
     setRouteGeometry([])
-    setVehicleType(selectedZone.value === "police" ? "Bus Eleves - Jusqu'a Police" : "Bus Eleves - Ville")
+    setVehicleType(selectedZone.value === "marche" ? "Bus Eleves - Jusqu'au marche" : "Bus Eleves - Ville")
   }
 
   useEffect(() => {
@@ -197,7 +197,7 @@ const Ride = () => {
         setDurationMin(nextDuration)
         setRouteGeometry(nextGeometry)
         setPrice(response.data.suggestedPrice ?? 1200)
-        setAppCommissionPercent(response.data.appCommissionPercent ?? 1)
+        setAppCommissionPercent(response.data.appCommissionPercent ?? 10)
         setAppCommissionAmount(response.data.appCommissionAmount ?? 0)
         setDriverNetAmount(response.data.providerNetAmount ?? 0)
       } catch (estimateError) {
@@ -207,9 +207,9 @@ const Ride = () => {
           setDurationMin(null)
           setRouteGeometry([])
           setPrice(1200)
-          setAppCommissionPercent(1)
-          setAppCommissionAmount(12)
-          setDriverNetAmount(1188)
+          setAppCommissionPercent(10)
+          setAppCommissionAmount(120)
+          setDriverNetAmount(1080)
         }
       } finally {
         if (!cancelled) {
@@ -336,7 +336,7 @@ const Ride = () => {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-['Sora'] text-2xl font-extrabold text-white">YOONWI</div>
-                  <div className="ndar-hero-soft text-xs font-semibold uppercase tracking-[0.18em]">Trajet premium en temps reel</div>
+                  <div className="ndar-hero-soft text-xs font-semibold uppercase tracking-[0.18em]">Trajet en temps reel</div>
                 </div>
                 <button onClick={() => navigate("/mybookings")} className="ndar-hero-button rounded-full px-3 py-2 text-xs font-bold">Mes courses</button>
               </div>
@@ -399,8 +399,7 @@ const Ride = () => {
                       >
                         <div className="text-sm font-semibold text-[#16324f]">{zone.label}</div>
                         <div className="text-xs text-[#5f7894]">{zone.note}</div>
-                        <div className="mt-1 text-xs text-[#9a7a24]">Ancien: {zone.oldFare} F</div>
-                        <div className="text-sm font-bold text-[#165c96]">Nouveau: {zone.fare} F</div>
+                        <div className="mt-1 text-sm font-bold text-[#165c96]">{zone.fare} F</div>
                       </button>
                     ))}
                   </div>
@@ -558,7 +557,7 @@ const Ride = () => {
               </div>
               <div className="mt-2 text-[#5f7894]">
                 {rideMode === "bus_student"
-                  ? "Police: 150 F et Ville: 200 F. Le prix est fixe selon la zone choisie."
+                  ? "Marche: 150 F et Ville: 200 F. Le prix est fixe selon la zone choisie."
                   : "L'estimation suit surtout la distance et reste volontairement plus basse que l'ancienne formule, avec un repere inspire des applis de transport economiques."}
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">

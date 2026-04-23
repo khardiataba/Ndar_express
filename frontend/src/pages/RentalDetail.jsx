@@ -69,8 +69,7 @@ const RentalDetail = () => {
       return
     }
 
-    // For now, show a message - implement actual booking logic
-    setToastMessage("Demande de réservation envoyée au prestataire")
+    setToastMessage("Reservation non activee pour le moment. Contactez le prestataire.")
     setShowBookingForm(false)
   }
 
@@ -131,7 +130,7 @@ const RentalDetail = () => {
                     <img
                       key={idx}
                       src={photo}
-                      alt={`Photo ${idx + 1}`}
+                      alt={`Vue ${idx + 1}`}
                       className="h-20 w-20 rounded object-cover flex-shrink-0 cursor-pointer hover:opacity-75 transition"
                     />
                   ))}
@@ -150,7 +149,7 @@ const RentalDetail = () => {
                 </div>
                 {rental.rating && (
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-yellow-400">⭐</p>
+                    <p className="text-3xl font-bold text-yellow-400">RATING</p>
                     <p className="text-sm font-semibold">{rental.rating.toFixed(1)}/5.0</p>
                   </div>
                 )}
@@ -159,21 +158,21 @@ const RentalDetail = () => {
               <div className="space-y-3 mb-6 border-t pt-4">
                 {rental.capacity?.passengers && (
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">👥</span>
+                    <span className="text-2xl">P</span>
                     <span>{rental.capacity.passengers} passagers</span>
                   </div>
                 )}
 
                 {rental.color && (
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🎨</span>
+                    <span className="text-2xl">C</span>
                     <span>Couleur: {rental.color}</span>
                   </div>
                 )}
 
                 {rental.licensePlate && (
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🏷️</span>
+                    <span className="text-2xl">ID</span>
                     <span>Immatriculation: {rental.licensePlate}</span>
                   </div>
                 )}
@@ -205,7 +204,7 @@ const RentalDetail = () => {
               {/* Insurance */}
               {rental.insuranceIncluded && (
                 <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-6">
-                  <p className="font-semibold text-green-800">✅ Assurance incluse</p>
+                  <p className="font-semibold text-green-800">Assurance incluse</p>
                 </div>
               )}
             </div>
@@ -215,7 +214,7 @@ const RentalDetail = () => {
         {/* Provider Info */}
         {rental.provider && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4">🏢 Prestataire</h2>
+            <h2 className="text-xl font-bold mb-4">Prestataire</h2>
             <div className="flex items-center gap-4">
               {rental.provider.profilePhotoUrl && (
                 <img
@@ -227,7 +226,7 @@ const RentalDetail = () => {
               <div className="flex-1">
                 <h3 className="font-bold text-lg">{rental.provider.name}</h3>
                 {rental.provider.rating && (
-                  <p className="text-yellow-600">⭐ {rental.provider.rating.toFixed(1)} ({rental.provider.totalRatings} avis)</p>
+                  <p className="text-yellow-600">RATING {rental.provider.rating.toFixed(1)} ({rental.provider.totalRatings} avis)</p>
                 )}
                 <p className="text-gray-600 text-sm">Spécialité: {rental.provider.providerDetails?.serviceCategory}</p>
               </div>
@@ -241,7 +240,7 @@ const RentalDetail = () => {
         {/* Gallery Section */}
         {gallery && gallery.galleryItems && gallery.galleryItems.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4">📸 Galerie du prestataire</h2>
+            <h2 className="text-xl font-bold mb-4">Galerie du prestataire</h2>
             <GalleryViewer items={gallery.galleryItems} providerName={rental.provider?.name} />
           </div>
         )}
@@ -249,7 +248,7 @@ const RentalDetail = () => {
         {/* Description */}
         {rental.description && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4">📝 Description</h2>
+            <h2 className="text-xl font-bold mb-4">Description</h2>
             <p className="text-gray-700 whitespace-pre-line">{rental.description}</p>
           </div>
         )}
@@ -257,7 +256,7 @@ const RentalDetail = () => {
         {/* Location */}
         {rental.location && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4">📍 Localisation</h2>
+            <h2 className="text-xl font-bold mb-4">Localisation</h2>
             <p className="text-gray-700">{rental.location.address}</p>
           </div>
         )}
@@ -265,7 +264,7 @@ const RentalDetail = () => {
         {/* Booking Form */}
         {showBookingForm && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4">📅 Réserver ce véhicule</h2>
+            <h2 className="text-xl font-bold mb-4">Reserver ce vehicule</h2>
             <div className="space-y-4">
               <div>
                 <label className="block font-semibold mb-2">Date de départ</label>
@@ -311,13 +310,13 @@ const RentalDetail = () => {
                   onClick={handleBooking}
                   className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
                 >
-                  ✅ Confirmer la réservation
+                  Confirmer la reservation
                 </button>
                 <button
                   onClick={() => setShowBookingForm(false)}
                   className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition"
                 >
-                  ✕ Annuler
+                  Annuler
                 </button>
               </div>
             </div>
@@ -332,7 +331,7 @@ const RentalDetail = () => {
             onClick={() => setShowBookingForm(true)}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-lg font-bold text-lg hover:shadow-lg transition"
           >
-            🚗 Réserver maintenant
+            Reserver maintenant
           </button>
         </div>
       )}
@@ -345,3 +344,4 @@ const RentalDetail = () => {
 }
 
 export default RentalDetail
+

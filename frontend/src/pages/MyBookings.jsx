@@ -102,7 +102,7 @@ const MyBookings = () => {
       subtitle: `${getRideAddress(ride.pickup)} → ${getRideAddress(ride.destination)}`,
       status: ride.status || "pending",
       meta: ride.price ? `${ride.price.toLocaleString()} FCFA • ${ride.paymentMethod || "Cash"}` : "Tarif sur demande",
-      iconSymbol: "🚗",
+      iconSymbol: "CAR",
       kind: "ride",
       person: ride.driver || null,
       personLabel: ride.driver?.name || "",
@@ -123,15 +123,15 @@ const MyBookings = () => {
         .filter(Boolean)
         .join(" • "),
       iconSymbol:
-        service.category === "coiffure-beaute" ? "💇" :
-        service.category === "pâtissier" ? "🥐" :
-        service.category === "livreur" ? "🛵" :
-        service.category === "électricien" ? "💡" :
-        service.category === "maçon" ? "🧱" :
-        service.category === "peintre" ? "🎨" :
-        service.category === "menuisier" ? "🪚" :
-        service.category === "autres" ? "🧩" :
-        "🔧",
+        service.category === "coiffure-beaute" ? "BEAUTE" :
+        service.category === "pâtissier" ? "FOOD" :
+        service.category === "livreur" ? "LIVRAISON" :
+        service.category === "électricien" ? "ELECTRICITE" :
+        service.category === "maçon" ? "MACON" :
+        service.category === "peintre" ? "PEINTURE" :
+        service.category === "menuisier" ? "MENUISERIE" :
+        service.category === "autres" ? "AUTRES" :
+        "OUTIL",
       kind: "service",
       person: service.assignedProvider || service.technician || service.preferredProvider || null,
       personLabel:
@@ -234,7 +234,7 @@ const MyBookings = () => {
           </div>
         ) : (
           <div className="ndar-card rounded-[30px] p-6 text-center">
-            <div className="text-5xl">📭</div>
+            <div className="text-5xl">VIDE</div>
             <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Aucune reservation pour le moment</h2>
             <p className="mt-2 text-sm text-[#5a8fd1]">Commencez par une course, un service artisan ou un rendez-vous beaute.</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -250,3 +250,4 @@ const MyBookings = () => {
 }
 
 export default MyBookings
+

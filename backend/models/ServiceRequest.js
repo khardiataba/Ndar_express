@@ -62,7 +62,7 @@ const ServiceRequestSchema = new mongoose.Schema(
     quotedBy: { type: String, default: null },
     quotedAt: { type: Date, default: null },
     quoteAcceptedAt: { type: Date, default: null },
-    appCommissionPercent: { type: Number, default: 1 },
+    appCommissionPercent: { type: Number, default: 10 },
     appCommissionAmount: { type: Number, default: 0 },
     providerNetAmount: { type: Number, default: 0 },
     safetyCode: { type: String, default: null, select: false },

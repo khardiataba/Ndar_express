@@ -15,7 +15,7 @@ const Notifications = () => {
       setLoading(true)
       setError(null)
       const response = await notificationAPI.getNotifications()
-      console.log('✅ Notifications chargées:', response.data)
+      console.log('OK Notifications chargées:', response.data)
       setNotifications(response.data)
     } catch (err) {
       console.error('❌ Erreur chargement notifications:', {
@@ -161,3 +161,4 @@ const Notifications = () => {
 }
 
 export default Notifications
+

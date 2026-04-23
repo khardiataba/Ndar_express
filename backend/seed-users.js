@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Script pour insérer les utilisateurs de test dans MongoDB
  * Exécution: node seed-users.js
  */
@@ -70,12 +70,12 @@ async function seedUsers() {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    console.log('✅ Connecté à MongoDB');
+    console.log('OK Connecté à MongoDB');
 
     // Supprimer les utilisateurs existants avec ces emails (optionnel)
     const emails = testUsers.map(u => u.email);
     await User.deleteMany({ email: { $in: emails } });
-    console.log('🗑️  Anciens utilisateurs supprimés');
+    console.log('DELETE  Anciens utilisateurs supprimés');
 
     // Hasher les mots de passe et créer les utilisateurs
     const usersToCreate = await Promise.all(testUsers.map(async (userData) => {
@@ -116,7 +116,7 @@ async function seedUsers() {
     console.log('\n🎉 Utilisateurs insérés avec succès !\n');
     
     createdUsers.forEach((user, index) => {
-      console.log(`👤 ${index + 1}. ${user.firstName} ${user.lastName} (${user.email})`);
+      console.log(`USER ${index + 1}. ${user.firstName} ${user.lastName} (${user.email})`);
       console.log(`   Rôle: ${user.role}`);
       console.log(`   Statut: ${user.status}`);
       if (user.providerDetails && user.providerDetails.serviceCategory) {
@@ -125,7 +125,7 @@ async function seedUsers() {
       console.log('');
     });
 
-    console.log('📝 Pour tester, utilisez ces identifiants:');
+    console.log('NOTE Pour tester, utilisez ces identifiants:');
     console.log('   - Email: l\'email de l\'utilisateur');
     console.log('   - Mot de passe: le mot de passe en clair (ex: fatoudiallo1)');
 
@@ -134,7 +134,7 @@ async function seedUsers() {
     process.exit(1);
   } finally {
     await mongoose.connection.close();
-    console.log('\n🔌 Déconnecté de MongoDB');
+    console.log('\nSOCKET Déconnecté de MongoDB');
   }
 }
 

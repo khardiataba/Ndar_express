@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import api from "../api"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import MapPicker from "../components/MapPicker"
+import useShakeDetection from "../hooks/useShakeDetection"
 
 const isSameDay = (left, right) =>
   left.getFullYear() === right.getFullYear() &&
@@ -134,6 +135,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionMessage, setActionMessage] = useState(null)
+  const [sendingSOS, setSendingSOS] = useState(false)
   const [busyRequestId, setBusyRequestId] = useState(null)
   const [settlingRequestId, setSettlingRequestId] = useState(null)
   const [paymentDraftById, setPaymentDraftById] = useState({})
@@ -161,7 +163,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
           lat: locationDraft.coordinates.lat,
           lng: locationDraft.coordinates.lng,
           label: "Ma localisation",
-          emoji: "📍",
+          icon: "pin",
           background: "#1260a1"
         }
       ]
@@ -349,6 +351,31 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
     }
   }
 
+  const sendServiceSOS = useCallback(
+    async (requestId) => {
+      if (!requestId) return
+      try {
+        setSendingSOS(true)
+        setError(null)
+        setActionMessage(null)
+        await api.post(`/services/${requestId}/safety-report`, {
+          type: "sos",
+          message: "SOS prestataire envoye depuis le tableau de bord",
+          location: {
+            name: "Mission active",
+            address: "Support securite"
+          }
+        })
+        setActionMessage("Alerte de securite envoyee.")
+      } catch (err) {
+        setError(err.response?.data?.message || "Impossible d'envoyer le SOS.")
+      } finally {
+        setSendingSOS(false)
+      }
+    },
+    []
+  )
+
   const settleAndCompleteRequest = async (request) => {
     try {
       setSettlingRequestId(request._id)
@@ -510,6 +537,13 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
       { total: 0, quoted: 0, accepted: 0, inProgress: 0, completed: 0 }
     )
   }, [myRequests])
+
+  const activeRequestForSOS = myRequests.find((req) => req.status === "accepted" || req.status === "in_progress") || null
+  const sendShakeSOS = useCallback(async () => {
+    if (!activeRequestForSOS?._id) return
+    await sendServiceSOS(activeRequestForSOS._id)
+  }, [activeRequestForSOS, sendServiceSOS])
+  const { shakeDetected, countdown, clearShake, confirmShake } = useShakeDetection(sendShakeSOS)
 
   return (
     <div className={`min-h-screen px-4 py-8 ${theme.pageClass}`}>
@@ -680,7 +714,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                             </div>
                           )}
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Contribution appli: {req.appCommissionPercent || 1}% ({(req.appCommissionAmount || 0).toLocaleString()} F)</span>
+                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Contribution appli: {req.appCommissionPercent || 10}% ({(req.appCommissionAmount || 0).toLocaleString()} F)</span>
                             <span className="rounded-full bg-[#eefaf2] px-3 py-2 text-[#178b55]">Net prestataire: {(req.providerNetAmount || Math.max(0, (req.price || 0) - (req.appCommissionAmount || 0))).toLocaleString()} F</span>
                           </div>
                           <div className="mt-2 text-xs font-semibold text-[#70839a]">Contribution app: {req.platformContributionStatus || "due"}</div>
@@ -747,7 +781,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                             )}
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Contribution appli: {req.appCommissionPercent || 1}% ({(req.appCommissionAmount || 0).toLocaleString()} F)</span>
+                            <span className="rounded-full bg-[#edf5fb] px-3 py-2 text-[#1260a1]">Contribution appli: {req.appCommissionPercent || 10}% ({(req.appCommissionAmount || 0).toLocaleString()} F)</span>
                             <span className="rounded-full bg-[#eefaf2] px-3 py-2 text-[#178b55]">Net prestataire: {(req.providerNetAmount || Math.max(0, (req.price || 0) - (req.appCommissionAmount || 0))).toLocaleString()} F</span>
                           </div>
                           <div className="mt-2 text-xs font-semibold text-[#70839a]">Contribution app: {req.platformContributionStatus || "due"}</div>
@@ -881,6 +915,33 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
               )}
             </section>
           </>
+        )}
+        {(activeRequestForSOS || shakeDetected) && (
+          <div className="fixed bottom-24 left-4 right-4 z-50 space-y-3">
+            {activeRequestForSOS && (
+              <button
+                onClick={() => sendServiceSOS(activeRequestForSOS._id)}
+                disabled={sendingSOS}
+                className="w-full rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm font-bold text-[#a54b55] shadow-xl disabled:opacity-70"
+              >
+                {sendingSOS ? "Envoi SOS..." : "SOS prestataire"}
+              </button>
+            )}
+            {shakeDetected && (
+              <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
+                <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
+                <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
+                <div className="flex justify-center gap-3">
+                  <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
+                    Envoyer maintenant
+                  </button>
+                  <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

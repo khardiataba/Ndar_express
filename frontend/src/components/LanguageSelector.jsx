@@ -45,7 +45,7 @@ export default function LanguageSelector() {
             >
               <span className="text-xl">{lang.flag}</span>
               {lang.label}
-              {i18n.language === lang.code && <span className="ml-auto">✓</span>}
+              {i18n.language === lang.code && <span className="ml-auto">OK</span>}
             </button>
           ))}
         </div>
@@ -53,3 +53,4 @@ export default function LanguageSelector() {
     </div>
   )
 }
+

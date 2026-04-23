@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import api from "../api"
 import VehicleCard from "../components/VehicleCard"
 import Toast from "../components/Toast"
+import AppIcon from "../components/AppIcon"
 
 const defaultClientLocation = {
   lat: 16.0244,
@@ -88,7 +89,10 @@ const Rental = () => {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold mb-4">🚗 Locations de Véhicules</h1>
+          <h1 className="mb-4 flex items-center gap-3 text-3xl font-bold">
+            <AppIcon name="car" className="h-8 w-8" />
+            <span>Locations de Véhicules</span>
+          </h1>
           <p className="text-blue-100">Trouvez le véhicule parfait pour votre déplacement</p>
         </div>
       </div>
@@ -99,21 +103,26 @@ const Rental = () => {
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           {/* Search */}
           <div className="mb-4">
-            <input
-              type="text"
-              placeholder="🔍 Rechercher un véhicule, une marque..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <AppIcon name="search" className="h-5 w-5" />
+              </span>
+              <input
+                type="text"
+                placeholder="Rechercher un véhicule, une marque..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 p-3 pl-11 outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
           </div>
 
           {/* Vehicle Type Filter */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             {[
-              { value: "all", label: "Tous les véhicules", icon: "🚗" },
-              { value: "small", label: "Petits véhicules 🏍️", icon: "🏍️" },
-              { value: "large", label: "Grands véhicules 🚐", icon: "🚐" }
+              { value: "all", label: "Tous les véhicules", icon: "car" },
+              { value: "small", label: "Petits véhicules", icon: "moto" },
+              { value: "large", label: "Grands véhicules", icon: "van" }
             ].map((type) => (
               <button
                 key={type.value}
@@ -121,20 +130,26 @@ const Rental = () => {
                   setVehicleType(type.value)
                   setSearchQuery("")
                 }}
-                className={`whitespace-nowrap px-4 py-2 rounded-full font-medium transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 font-medium transition ${
                   vehicleType === type.value
                     ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                {type.label}
+                <span className="flex items-center gap-2">
+                  <AppIcon name={type.icon} className="h-4 w-4" />
+                  <span>{type.label}</span>
+                </span>
               </button>
             ))}
           </div>
 
           {/* Location Info */}
           <div className="text-sm text-gray-600 mt-4 p-2 bg-blue-50 rounded">
-            📍 {clientLocation.address}
+            <span className="flex items-center gap-2">
+              <AppIcon name="pin" className="h-4 w-4 text-blue-600" />
+              <span>{clientLocation.address}</span>
+            </span>
           </div>
         </div>
 
@@ -152,7 +167,10 @@ const Rental = () => {
           </div>
         ) : filteredRentals.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-md">
-            <p className="text-2xl mb-2">😔 Aucun véhicule disponible</p>
+            <p className="mb-2 flex items-center justify-center gap-2 text-2xl">
+              <AppIcon name="info" className="h-6 w-6 text-blue-600" />
+              <span>Aucun véhicule disponible</span>
+            </p>
             <p className="text-gray-600">
               {searchQuery ? "Essayez une autre recherche" : "Revenir plus tard pour les nouvelles locations"}
             </p>
@@ -187,3 +205,4 @@ const Rental = () => {
 }
 
 export default Rental
+

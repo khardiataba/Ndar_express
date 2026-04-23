@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
+import useShakeDetection from "../hooks/useShakeDetection"
 
 // Map backend statuses to tracking steps
 const statusToStage = {
@@ -76,10 +77,10 @@ const RideTracking = () => {
     const handleLocationUpdate = (event) => {
       const data = event.detail
       if (data?.location) {
-        setDriverPosition({
-          lat: data.location.lat || driverPosition.lat,
-          lng: data.location.lng || driverPosition.lng
-        })
+        setDriverPosition((prev) => ({
+          lat: data.location.lat ?? data.location.latitude ?? prev.lat,
+          lng: data.location.lng ?? data.location.longitude ?? prev.lng
+        }))
       }
     }
 
@@ -108,7 +109,6 @@ const RideTracking = () => {
     }
   }, [ride])
 
-  // No more automatic simulation - tracking stage comes from real ride status
   const trackingStage = statusToStage[ride?.status] ?? 0
 
   const eta = ride?.durationMin ? `Arrivee estimee dans ${Math.max(1, ride.durationMin - 2)} min` : "Arrivee estimee dans 4 min"
@@ -149,7 +149,7 @@ Code PIN: ${safetyCode}`
     }
   }
 
-  const sendEmergencyAlert = async () => {
+  const sendEmergencyAlert = useCallback(async () => {
     if (!rideIdentifier) {
       setStatusMessage("Aucune course active à signaler.")
       return
@@ -173,7 +173,9 @@ Code PIN: ${safetyCode}`
     } finally {
       setSendingAlert(false)
     }
-  }
+  }, [ride, rideIdentifier])
+
+  const { shakeDetected, countdown, clearShake, confirmShake } = useShakeDetection(sendEmergencyAlert)
 
   return (
     <div className="min-h-screen px-4 pb-10 pt-5">
@@ -302,6 +304,23 @@ Code PIN: ${safetyCode}`
           </div>
         </section>
       </div>
+
+      {shakeDetected && (
+        <div className="fixed bottom-24 left-4 right-4 z-50">
+          <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
+            <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
+            <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
+            <div className="flex justify-center gap-3">
+              <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
+                Envoyer maintenant
+              </button>
+              <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -34,7 +34,7 @@ const ForgotPassword = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md text-center">
-          <div className="text-4xl mb-4">✅</div>
+          <div className="text-4xl mb-4">OK</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Vérifiez votre email</h1>
           <p className="text-gray-600 mb-6">
             Si le compte existe, vous recevrez un lien de réinitialisation du mot de passe à <strong>{email}</strong>
@@ -107,3 +107,4 @@ const ForgotPassword = () => {
 }
 
 export default ForgotPassword
+

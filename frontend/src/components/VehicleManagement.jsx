@@ -81,7 +81,7 @@ const VehicleManagement = () => {
       const response = await api.post("/rentals", submitData)
 
       if (response.data.success) {
-        setToastMessage("Véhicule ajouté avec succès ! ✅")
+        setToastMessage("Véhicule ajouté avec succès ! OK")
         setShowForm(false)
         resetForm()
         fetchVehicles()
@@ -144,9 +144,9 @@ const VehicleManagement = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      available: "🟢 Disponible",
-      rented: "🔴 Loué",
-      maintenance: "🟡 Maintenance"
+      available: "END Disponible",
+      rented: "START Loué",
+      maintenance: "ROUTE Maintenance"
     }
     return badges[status] || status
   }
@@ -159,7 +159,7 @@ const VehicleManagement = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">🚗 Mes Véhicules ({vehicles.length})</h2>
+        <h2 className="text-2xl font-bold">CAR Mes Véhicules ({vehicles.length})</h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className={`px-4 py-2 rounded-lg font-semibold transition ${
@@ -168,7 +168,7 @@ const VehicleManagement = () => {
               : "bg-blue-600 text-white hover:bg-blue-700"
           }`}
         >
-          {showForm ? "✕ Annuler" : "➕ Ajouter un véhicule"}
+          {showForm ? "X Annuler" : "➕ Ajouter un véhicule"}
         </button>
       </div>
 
@@ -201,8 +201,8 @@ const VehicleManagement = () => {
                 onChange={handleInputChange}
                 className="w-full p-2 border border-gray-300 rounded"
               >
-                <option value="small">🏍️ Petit format (moto, scooter, compact)</option>
-                <option value="large">🚐 Grand format (SUV, minibus, van)</option>
+                <option value="small">MOTO Petit format (moto, scooter, compact)</option>
+                <option value="large">VAN Grand format (SUV, minibus, van)</option>
               </select>
             </div>
 
@@ -377,7 +377,7 @@ const VehicleManagement = () => {
             type="submit"
             className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
           >
-            ✅ Ajouter le véhicule
+            OK Ajouter le véhicule
           </button>
         </form>
       )}
@@ -420,13 +420,13 @@ const VehicleManagement = () => {
                         : "bg-green-100 text-green-700 hover:bg-green-200"
                     }`}
                   >
-                    {vehicle.availabilityStatus === "available" ? "⚠️ Maintenance" : "✅ Disponible"}
+                    {vehicle.availabilityStatus === "available" ? "⚠️ Maintenance" : "OK Disponible"}
                   </button>
                   <button
                     onClick={() => handleDeleteVehicle(vehicle._id)}
                     className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-semibold hover:bg-red-200 transition"
                   >
-                    🗑️ Supprimer
+                    DELETE Supprimer
                   </button>
                 </div>
               </div>
@@ -441,3 +441,4 @@ const VehicleManagement = () => {
 }
 
 export default VehicleManagement
+

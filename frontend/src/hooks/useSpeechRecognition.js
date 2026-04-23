@@ -96,13 +96,13 @@ export default function useSpeechRecognition() {
         if (!isMountedRef.current) return
         
         const errorMessages = {
-          'network-error': '❌ Erreur réseau. Vérifiez votre connexion.',
-          'no-speech': '🔇 Pas de son détecté. Essayez encore.',
-          'audio-capture': '🎤 Pas d\'accès au microphone.',
-          'not-allowed': '🔐 Permission micro refusée.',
-          'service-not-allowed': '⛔ Service non autorisé.',
-          'no-permission': '❌ Permissions insuffisantes.',
-          'aborted': '⏹️ Enregistrement annulé.'
+          'network-error': 'Erreur reseau. Verifiez votre connexion.',
+          'no-speech': 'Pas de son detecte. Essayez encore.',
+          'audio-capture': 'Pas d\'acces au microphone.',
+          'not-allowed': 'Permission micro refusee.',
+          'service-not-allowed': 'Service non autorise.',
+          'no-permission': 'Permissions insuffisantes.',
+          'aborted': 'Enregistrement annule.'
         }
 
         setError(errorMessages[event.error] || `Erreur: ${event.error}`)

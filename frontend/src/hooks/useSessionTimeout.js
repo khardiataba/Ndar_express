@@ -17,7 +17,6 @@ export const useSessionTimeout = () => {
 
     let timeoutId
     let warningTimeoutId
-    let activityListener
 
     const resetTimeout = () => {
       // Clear existing timeouts

@@ -1,14 +1,14 @@
 const roundToNearestHundred = (value) => Math.max(0, Math.round(value / 100) * 100)
 
 const STUDENT_BUS_FARES = {
-  police: 150,
+  marche: 150,
   ville: 200
 }
 
 const normalizeStudentBusZone = (value) => {
   const zone = String(value || "").trim().toLowerCase()
   if (!zone) return null
-  if (zone.includes("police")) return "police"
+  if (zone.includes("marche") || zone.includes("march") || zone.includes("police")) return "marche"
   if (zone.includes("ville") || zone.includes("city")) return "ville"
   return null
 }

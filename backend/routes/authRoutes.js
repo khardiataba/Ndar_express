@@ -446,7 +446,9 @@ router.post("/upload-docs", authMiddleware,upload.fields([
         idCardBackUrl: user.idCardBackUrl,
         licenseUrl: user.licenseUrl,
         registrationCardUrl: user.registrationCardUrl,
-        documentChecks: user.documentChecks
+        documentChecks: user.documentChecks,
+        verificationStatus: user.status,
+        reviewNote: user.reviewNote
       })
     } catch (err) {
       console.error(err)

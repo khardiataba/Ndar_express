@@ -12,7 +12,7 @@ export default function SpeechInput({
   value,
   onChange,
   onSubmit,
-  icon = '🔍',
+  icon = 'Search',
   disabled = false,
   type = 'text',
   isDark = false // Pour les variantes de couleur
@@ -26,7 +26,7 @@ export default function SpeechInput({
       setInputValue(transcript)
       onChange?.(transcript)
     }
-  }, [transcript])
+  }, [transcript, onChange])
 
   // Mettre à jour avec le prop value
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function SpeechInput({
             title={isListening ? 'Arrêter l\'enregistrement' : 'Parler au lieu d\'écrire'}
             aria-label="Reconnaissance vocale"
           >
-            {isListening ? '🎤' : '🎙️'}
+            {isListening ? 'Mic On' : 'Mic'}
           </button>
         )}
 
@@ -111,7 +111,7 @@ export default function SpeechInput({
             className="p-2 bg-[#1260a1] text-white rounded-lg hover:bg-blue-700 transition font-bold text-sm"
             title="Envoyer"
           >
-            ✓
+            OK
           </button>
         )}
       </div>
@@ -126,7 +126,7 @@ export default function SpeechInput({
       {/* État en écoute */}
       {isListening && (
         <div className="flex items-center gap-2 text-orange-600 text-sm font-semibold animate-pulse">
-          <span className="text-lg">🎤</span>
+          <span className="text-lg">Mic</span>
           <span>Écoute en cours...</span>
           <div className="flex gap-1">
             <div className="w-1 h-3 bg-orange-600 rounded animate-bounce"></div>
@@ -139,7 +139,7 @@ export default function SpeechInput({
       {/* Message supportabilité */}
       {!isSupported && (
         <p className="text-xs text-gray-500 italic">
-          💡 La reconnaissance vocale n'est pas supportée sur ce navigateur
+          Astuce: la reconnaissance vocale n'est pas supportee sur ce navigateur
         </p>
       )}
     </div>

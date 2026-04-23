@@ -98,7 +98,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="font-bold text-xl mb-4">📸 Ajouter des photos à votre galerie</h3>
+      <h3 className="font-bold text-xl mb-4">GALERIE Ajouter des photos à votre galerie</h3>
 
       {/* Mode Selection */}
       <div className="flex gap-4 mb-6">
@@ -112,7 +112,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
               setUploadedItems([])
             }}
           />
-          <span>📷 Photo simple</span>
+          <span>PHOTO Photo simple</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -124,7 +124,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
               setUploadedItems([])
             }}
           />
-          <span>🔄 Avant/Après</span>
+          <span>SWAP Avant/Après</span>
         </label>
       </div>
 
@@ -236,10 +236,11 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
             : "bg-blue-600 text-white hover:bg-blue-700"
         }`}
       >
-        {isLoading ? "Upload en cours..." : "🚀 Uploader"}
+        {isLoading ? "Upload en cours..." : "GO Uploader"}
       </button>
     </div>
   )
 }
 
 export default GalleryUploader
+

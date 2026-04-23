@@ -3,7 +3,6 @@ import api from '../api'
 
 const SOSModal = ({ isOpen, onClose, rideId, userRole }) => {
   const [sending, setSending] = useState(false)
-  const [location, setLocation] = useState(null)
 
   const getCurrentLocation = () => {
     return new Promise((resolve) => {
@@ -83,7 +82,7 @@ const SOSModal = ({ isOpen, onClose, rideId, userRole }) => {
                   Envoi...
                 </>
               ) : (
-                '🚨 ENVOYER SOS'
+                'Envoyer SOS'
               )}
             </button>
           </div>
