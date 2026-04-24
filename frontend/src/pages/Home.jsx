@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import MapPicker from "../components/MapPicker"
 import SpeechInput from "../components/SpeechInput"
+import AppIcon from "../components/AppIcon"
 import api from "../api"
 
 const featureCards = [
@@ -39,7 +40,7 @@ const featureCards = [
     action: "/service"
   },
   {
-    key: "automotive",
+    key: "automotive", 
     title: "Lavage Automobile",
     subtitle: "Nettoyage voiture, moto et vehicules professionnels.",
     accent: "from-[#1260a1] to-[#4a90e2]",
@@ -76,8 +77,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 5500,
     accent: "bg-[#eefaf2]",
-    iconLabel: "FOOD",
-    iconSymbol: "FOOD",
+    iconSymbol: "food",
     coords: { lat: 16.0308, lng: -16.5001 }
   },
   {
@@ -91,8 +91,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 8000,
     accent: "bg-[#fff6e2]",
-    iconLabel: "BAK",
-    iconSymbol: "BAKERY",
+    iconSymbol: "food",
     coords: { lat: 16.042, lng: -16.5065 }
   },
   {
@@ -106,8 +105,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 2500,
     accent: "bg-[#edf5fb]",
-    iconLabel: "RIDE",
-    iconSymbol: "CAR",
+    iconSymbol: "car",
     coords: { lat: 16.0283, lng: -16.4976 }
   },
   {
@@ -121,8 +119,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 7000,
     accent: "bg-[#fff1f1]",
-    iconLabel: "ELEC",
-    iconSymbol: "ELECTRICITE",
+    iconSymbol: "electricity",
     coords: { lat: 16.0188, lng: -16.4919 }
   },
   {
@@ -136,8 +133,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 3000,
     accent: "bg-[#eef4ff]",
-    iconLabel: "DLV",
-    iconSymbol: "DELIVERY",
+    iconSymbol: "delivery",
     coords: { lat: 16.0262, lng: -16.4992 }
   },
   {
@@ -151,8 +147,7 @@ const discoveryCatalog = [
     isOpen: false,
     price: 12000,
     accent: "bg-[#fff2f7]",
-    iconLabel: "BEAU",
-    iconSymbol: "BEAUTE",
+    iconSymbol: "beauty",
     coords: { lat: 16.0149, lng: -16.5072 }
   },
   {
@@ -166,8 +161,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 15000,
     accent: "bg-[#f6f0e6]",
-    iconLabel: "WOOD",
-    iconSymbol: "MEUBLE",
+    iconSymbol: "furniture",
     coords: { lat: 16.0068, lng: -16.5205 }
   },
   {
@@ -181,8 +175,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 8000,
     accent: "bg-[#e0f2fe]",
-    iconLabel: "CAR",
-    iconSymbol: "VAN",
+    iconSymbol: "van",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -196,8 +189,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 10000,
     accent: "bg-[#dbeafe]",
-    iconLabel: "PIPE",
-    iconSymbol: "OUTIL",
+    iconSymbol: "tool",
     coords: { lat: 16.018, lng: -16.3728 }
   },
   {
@@ -211,8 +203,7 @@ const discoveryCatalog = [
     isOpen: false,
     price: 12000,
     accent: "bg-[#dcfce7]",
-    iconLabel: "GARD",
-    iconSymbol: "JARDIN",
+    iconSymbol: "garden",
     coords: { lat: 16.0312, lng: -16.5078 }
   },
   {
@@ -226,8 +217,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 6000,
     accent: "bg-[#f3e8ff]",
-    iconLabel: "TECH",
-    iconSymbol: "INFO",
+    iconSymbol: "info",
     coords: { lat: 16.0567, lng: -16.4568 }
   },
   {
@@ -241,8 +231,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 15000,
     accent: "bg-[#fef3c7]",
-    iconLabel: "EDU",
-    iconSymbol: "EDU",
+    iconSymbol: "edu",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -256,8 +245,7 @@ const discoveryCatalog = [
     isOpen: true,
     price: 20000,
     accent: "bg-[#fce7f3]",
-    iconLabel: "CLEAN",
-    iconSymbol: "MENAGE",
+    iconSymbol: "cleaning",
     coords: { lat: 16.0244, lng: -16.5015 }
   },
   {
@@ -271,26 +259,39 @@ const discoveryCatalog = [
     isOpen: false,
     price: 25000,
     accent: "bg-[#fdf2f8]",
-    iconLabel: "BABY",
-    iconSymbol: "GARDE",
+    iconSymbol: "guard",
     coords: { lat: 16.0244, lng: -16.5015 }
   }
 ]
 
 const serviceFamilies = [
-  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", iconLabel: "TA", iconSymbol: "CAR", route: "/ride" },
-  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", iconLabel: "AR", iconSymbol: "SERVICE", route: "/service" },
-  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", iconLabel: "FO", iconSymbol: "FOOD", route: "/service" },
-  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", iconLabel: "BE", iconSymbol: "BEAUTE", route: "/service" },
-  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", iconLabel: "DL", iconSymbol: "LIVRAISON", route: "/service" },
-  { key: "automotive", title: "Lavage Auto", subtitle: "Nettoyage vehicules", color: "bg-[#1260a1]", iconLabel: "CA", iconSymbol: "CAR", route: "/service" },
-  { key: "maintenance", title: "Maintenance", subtitle: "Reparations diverses", color: "bg-[#8b5cf6]", iconLabel: "MA", iconSymbol: "OUTIL", route: "/service" },
-  { key: "education", title: "Education", subtitle: "Cours et soutien", color: "bg-[#f59e0b]", iconLabel: "ED", iconSymbol: "EDU", route: "/service" },
-  { key: "domestic", title: "Services Domestiques", subtitle: "Menage et garde", color: "bg-[#ec4899]", iconLabel: "DO", iconSymbol: "HOME", route: "/service" }
+  { key: "mobility", title: "Mobility", subtitle: "Taxi et livraison", color: "bg-[#165c96]", iconSymbol: "car", route: "/ride" },
+  { key: "artisan", title: "Artisan Services", subtitle: "Depannage maison", color: "bg-[#d7ae49]", iconSymbol: "service", route: "/service" },
+  { key: "food", title: "Restaurants & Cafes", subtitle: "Repas et gateaux", color: "bg-[#18c56e]", iconSymbol: "food", route: "/service" },
+  { key: "beauty", title: "Coiffure & Beaute", subtitle: "Salon, maquillage, soins", color: "bg-[#ef7f87]", iconSymbol: "beauty", route: "/service" },
+  { key: "delivery", title: "Livreur", subtitle: "Colis et courses urgentes", color: "bg-[#5a86d6]", iconSymbol: "delivery", route: "/service" },
+  { key: "automotive", title: "Lavage Auto", subtitle: "Nettoyage vehicules", color: "bg-[#1260a1]", iconSymbol: "car", route: "/service" },
+  { key: "maintenance", title: "Maintenance", subtitle: "Reparations diverses", color: "bg-[#8b5cf6]", iconSymbol: "tool", route: "/service" },
+  { key: "education", title: "Education", subtitle: "Cours et soutien", color: "bg-[#f59e0b]", iconSymbol: "edu", route: "/service" },
+  { key: "domestic", title: "Services Domestiques", subtitle: "Menage et garde", color: "bg-[#ec4899]", iconSymbol: "house", route: "/service" }
 ]
-
 const quickFilters = ["Ouvert maintenant", "Livraison", "Trajet rapide", "Artisan", "Beaute", "Livreur"]
-const formatServiceTitle = (service) => service.title || `Besoin de ${service.category}`
+const formatServiceTitle = (item) => {
+  if (!item) return "Service"
+  // Cas d'une course (Ride)
+  if (item.vehicleType || item.pickup) {
+    const dest = item.destination?.name || item.destination?.address
+    return dest ? `Course vers ${dest}` : "Course en cours"
+  }
+  // Cas d'une demande de service (ServiceRequest)
+  if (item.title) return item.title
+  if (item.category) return `Besoin de ${item.category}`
+  if (item.description) return item.description.slice(0, 60)
+  // Cas du catalogue de découverte
+  return "Service"
+}
+
+
 const defaultClientLocation = { lat: 16.0244, lng: -16.5015, name: "Votre position", address: "Saint-Louis" }
 const getSuggestedCategory = (item) => {
   if (!item) return "artisan"
@@ -298,6 +299,14 @@ const getSuggestedCategory = (item) => {
   if (item.category === "livreur") return "delivery"
   if (item.category === "coiffure-beaute") return "beauty"
   return "artisan"
+}
+
+const getActiveServiceIcon = (item) => {
+  const isRide = Boolean(item.vehicleType)
+  if (isRide) return "car"
+  if (item.category === "coiffure-beaute") return "beauty"
+  if (item.category === "livreur") return "delivery"
+  return "tools"
 }
 
 const Home = () => {
@@ -343,7 +352,7 @@ const Home = () => {
 
   const openRestaurants = filteredDiscovery.filter((item) => item.type === "restaurant" && item.isOpen)
   const availableServices = filteredDiscovery.filter((item) => item.type === "service")
-  const suggestedNeeds = filteredDiscovery.slice(0, 5)
+
   const smartActions = [
     {
       id: "go-home",
@@ -494,6 +503,7 @@ const Home = () => {
   return (
     <div className="min-h-screen px-4 pb-28 pt-5 lg:px-6">
       <div className="ndar-shell space-y-4">
+        {/* HEADER */}
         <header className="rounded-[36px] border border-[#0b3154] bg-[linear-gradient(180deg,#0d416e_0%,#072a48_100%)] p-5 shadow-[0_24px_60px_rgba(8,35,62,0.30)]">
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -503,7 +513,7 @@ const Home = () => {
                     src="/logo.svg"
                     alt="YOONWI"
                     className="h-10 w-10 rounded-full object-cover"
-                    onError={(e) => { e.target.src = '/logo512.png'; }}
+                    onError={(e) => { e.target.src = '/logo512.png' }}
                   />
                 </div>
                 <div className="font-['Sora'] text-2xl sm:text-[34px] font-extrabold leading-none text-white whitespace-nowrap">
@@ -567,6 +577,7 @@ const Home = () => {
           </div>
         </header>
 
+        {/* CARTE & ITINERAIRE */}
         <section className="ndar-card overflow-hidden rounded-[36px] p-3">
           <div className="mb-3 flex flex-col gap-3 px-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -621,6 +632,7 @@ const Home = () => {
           </div>
         </section>
 
+        {/* CARROUSEL FEATURE CARDS */}
         <section className="relative overflow-hidden rounded-[36px] p-1">
           <div className={`min-h-[240px] rounded-[32px] bg-gradient-to-br ${featureCards[activeSlide].accent} p-6 text-white shadow-[0_28px_70px_rgba(8,35,62,0.22)] transition-all duration-500`}>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -635,7 +647,7 @@ const Home = () => {
             </div>
             <button
               onClick={() => navigate(featureCards[activeSlide].action)}
-              className="rounded-2xl bg-white/18 px-4 py-3 text-sm font-semibold backdrop-blur"
+              className="rounded-2xl bg-white/20 px-4 py-3 text-sm font-semibold backdrop-blur"
             >
               Ouvrir ce service
             </button>
@@ -652,212 +664,176 @@ const Home = () => {
           </div>
         </section>
 
+        {/* FAMILLES DE SERVICES */}
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredFamilies.map((item) => (
             <button
               key={item.key}
               onClick={() => navigate(item.route, { state: { suggestedCategory: item.key } })}
-              className={`ndar-lift ${item.color} min-h-[138px] rounded-[28px] p-4 text-left text-white shadow-[0_22px_45px_rgba(8,35,62,0.16)]`}
+              className={`flex flex-col items-start gap-2 rounded-[28px] p-4 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${item.color} text-white shadow-[0_12px_30px_rgba(8,35,62,0.18)]`}
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl">
-                {item.iconSymbol}
+              <AppIcon name={item.iconSymbol} className="h-7 w-7 text-white" />
+              <div>
+                <div className="text-sm font-bold">{item.title}</div>
+                <div className="text-xs text-white/80">{item.subtitle}</div>
               </div>
-              <h2 className="font-['Sora'] text-lg font-bold leading-tight">{item.title}</h2>
-              <p className="mt-2 text-xs text-[#fff7ec]">{item.subtitle}</p>
             </button>
           ))}
         </section>
 
-        <section className="ndar-panel-beige rounded-[32px] p-5">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {/* RESTOS OUVERTS */}
+        <section className="ndar-card rounded-[36px] p-4">
+          <div className="mb-3 px-1">
+            <div className="ndar-chip">Restos ouverts</div>
+            <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Restaurants & Cafes</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {openRestaurants.length === 0 ? (
+              <p className="px-2 text-sm text-[#5a8fd1]">Aucun restaurant ouvert pour cette recherche.</p>
+            ) : (
+              openRestaurants.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedDiscoveryId(item.id)
+                    navigate("/service", { state: { suggestedCategory: getSuggestedCategory(item), suggestedListing: item } })
+                  }}
+                  className={`min-w-[200px] flex-shrink-0 rounded-[24px] ${item.accent} p-4 text-left`} >
+                 <AppIcon name={item.iconSymbol} className="h-6 w-6 text-[#165c96]" />
+                  <div className="mt-2 text-sm font-bold text-[#16324f]">{item.title}</div>
+                  <div className="mt-1 text-xs text-[#5a8fd1]">{item.area} · {item.eta}</div>
+                  <div className="mt-2 text-xs font-semibold text-[#165c96]">{item.price.toLocaleString()} FCFA</div>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* SERVICES DISPONIBLES */}
+        <section className="ndar-card rounded-[36px] p-4">
+          <div className="mb-3 px-1">
+            <div className="ndar-chip">Services disponibles</div>
+            <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Artisans & Prestataires</h2>
+          </div>
+          <div className="space-y-3">
+            {availableServices.length === 0 ? (
+              <p className="px-2 text-sm text-[#5a8fd1]">Aucun service pour cette recherche.</p>
+            ) : (
+              availableServices.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedDiscoveryId(item.id)
+                    navigate("/service", { state: { suggestedCategory: getSuggestedCategory(item), suggestedListing: item } })
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-[20px] ${item.accent} p-3 text-left`}
+                >
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/60">
+                    <AppIcon name={item.iconSymbol} className="h-6 w-6 text-[#165c96]" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-[#16324f]">{formatServiceTitle(item)}</div>
+                    <div className="text-xs text-[#5a8fd1]">{item.area} · {item.eta}</div>
+                  </div>
+                  <div className="text-xs font-semibold text-[#165c96]">{item.price.toLocaleString()} FCFA</div>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* RECHERCHE RAPIDE */}
+        <section className="ndar-card rounded-[36px] p-4">
+          <div className="mb-3 px-1">
+            <div className="ndar-chip">Recherche rapide</div>
+            <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Suggestions</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {quickFilters.map((filter) => (
-              <span key={filter} className="whitespace-nowrap rounded-full bg-white/70 px-3 py-2 text-xs font-semibold text-[#0a3760] shadow-[0_8px_20px_rgba(112,79,34,0.08)]">
+              <button
+                key={filter}
+                onClick={() => setQuery(filter)}
+                className="rounded-full border border-[#c8dff0] bg-[#edf5fb] px-4 py-2 text-xs font-semibold text-[#165c96] transition-all hover:bg-[#165c96] hover:text-white"
+              >
                 {filter}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="ndar-card rounded-[32px] p-5">
-          <div className="mb-4">
-            <div className="ndar-chip">Pour vous</div>
-            <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Actions intelligentes</h2>
-            <p className="text-sm text-[#5a8fd1]">Des raccourcis pensés pour aller plus vite selon vos usages les plus probables.</p>
-          </div>
-          <div className="space-y-3">
-            {smartActions.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.route, item.state ? { state: item.state } : undefined)}
-                className="ndar-lift flex w-full flex-col gap-3 rounded-[26px] border border-[#e6dccf] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <div className="font-semibold text-[#16324f]">{item.title}</div>
-                  <div className="mt-1 text-sm text-[#5a8fd1]">{item.subtitle}</div>
-                </div>
-                <div className="rounded-full bg-[#edf3f8] px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#1260a1]">
-                  {item.actionLabel}
-                </div>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="ndar-card rounded-[30px] p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Restos ouverts</h2>
-              <p className="text-sm text-[#5a8fd1]">Les options disponibles maintenant autour de vous.</p>
+        {/* SERVICES ACTIFS */}
+        {activeServices.length > 0 && (
+          <section className="ndar-card rounded-[36px] p-4">
+            <div className="mb-3 px-1">
+              <div className="ndar-chip">En cours</div>
+              <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Mes services actifs</h2>
             </div>
-            <button onClick={() => navigate("/service", { state: { suggestedCategory: "food" } })} className="text-sm font-semibold text-[#165c96]">
-              Voir plus
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {openRestaurants.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSelectedDiscoveryId(item.id)
-                  navigate("/service", { state: { suggestedCategory: "food", suggestedListing: item } })
-                }}
-                className="flex w-full items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 text-left shadow-sm"
-              >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-2xl ${item.accent}`}>{item.iconSymbol}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-base font-bold text-[#16324f]">{item.title}</div>
-                  <div className="mt-1 truncate text-sm text-[#5a8fd1]">{item.description}</div>
-                  <div className="mt-2 text-xs font-semibold text-[#18c56e]">Ouvert • {item.area} • {item.eta}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-[#165c96]">{item.price.toLocaleString()} F</div>
-                  <div className="text-xs text-[#5a8fd1]">Commander</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="ndar-card rounded-[30px] p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Services disponibles</h2>
-              <p className="text-sm text-[#70839a]">Artisans et prestations que vous pouvez demander tout de suite.</p>
-            </div>
-            <button onClick={() => navigate("/service")} className="text-sm font-semibold text-[#165c96]">
-              Explorer
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {availableServices.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSelectedDiscoveryId(item.id)
-                  navigate("/service", { state: { suggestedCategory: getSuggestedCategory(item), suggestedListing: item } })
-                }}
-                className="flex w-full items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 text-left shadow-sm"
-              >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-2xl ${item.accent}`}>{item.iconSymbol}</div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-base font-bold text-[#16324f]">{item.title}</div>
-                  <div className="mt-1 truncate text-sm text-[#70839a]">{item.description}</div>
-                  <div className={`mt-2 text-xs font-semibold ${item.isOpen ? "text-[#18c56e]" : "text-[#d7ae49]"}`}>
-                    {item.isOpen ? "Disponible" : "Sur reservation"} • {item.area} • {item.eta}
-                  </div>
-                </div>
-                <span className="text-xl text-[#9eb1c6]">›</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="ndar-card rounded-[30px] p-5">
-          <div className="mb-4">
-            <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Recherche rapide</h2>
-            <p className="text-sm text-[#70839a]">Tout ce que la cliente peut rechercher dans l’app, au meme endroit.</p>
-          </div>
-
-          <div className="grid gap-3">
-            {suggestedNeeds.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedDiscoveryId(item.id)}
-                className="flex items-center justify-between rounded-[24px] bg-[#f8fbff] px-4 py-4 text-left transition hover:bg-[#edf5fb]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-[#f1f7ff] flex items-center justify-center text-xl">{item.iconSymbol}</div>
-                  <div>
-                    <div className="font-semibold text-[#16324f]">{item.title}</div>
-                    <div className="text-sm text-[#70839a]">{item.type === "restaurant" ? "Restauration" : item.type === "mobility" ? "Mobilite" : item.category === "livreur" ? "Livraison" : "Service"} • {item.area}</div>
-                  </div>
-                </div>
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#165c96]">Voir</div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="ndar-card rounded-[30px] p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">My Active Services</h2>
-              <p className="text-sm text-[#70839a]">Suivez vos courses et demandes en cours.</p>
-            </div>
-            <button onClick={() => navigate("/mybookings")} className="text-sm font-semibold text-[#165c96]">
-              Voir tout
-            </button>
-          </div>
-
-          {error && (
-            <div className="mb-4 rounded-2xl border border-[#ef7f87]/40 bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">
-              {error}
-            </div>
-          )}
-
-          {loading ? (
             <div className="space-y-3">
-              {[1, 2].map((item) => (
-                <div key={item} className="h-24 animate-pulse rounded-[22px] bg-[#edf5fb]" />
+              {activeServices.map((item) => (
+                <button
+                  key={item._id}
+                  onClick={() => navigate(item.vehicleType ? `/ride/${item._id}` : `/service/${item._id}`)}
+                  className="flex w-full items-center gap-3 rounded-[20px] bg-[#edf5fb] p-3 text-left"
+                >
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#165c96]/10">
+                    <AppIcon name={getActiveServiceIcon(item)} className="h-6 w-6 text-[#165c96]" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-[#16324f]">{formatServiceTitle(item)}</div>
+                    <div className="text-xs text-[#5a8fd1]">{item.status || "En cours"}</div>
+                  </div>
+                </button>
               ))}
             </div>
-          ) : activeServices.length > 0 ? (
-            <div className="space-y-3">
-              {activeServices.map((item) => {
-                const isRide = Boolean(item.vehicleType)
-                const title = isRide ? item.vehicleType : formatServiceTitle(item)
-                const subtitle = isRide
-                  ? `${item.pickup?.name || item.pickup?.address || "Depart"} → ${item.destination?.name || item.destination?.address || "Arrivee"}`
-                  : item.description
+          </section>
+        )}
 
-                return (
-                  <div key={item._id} className="flex items-center gap-4 rounded-[24px] border border-[#e5edf4] bg-white px-4 py-4 shadow-sm">
-                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${isRide ? "bg-[#edf5fb]" : "bg-[#eefaf2]"}`}>
-                      {isRide ? "TAXI" : item.category === "coiffure-beaute" ? "BEAUTE" : item.category === "livreur" ? "LIVRAISON" : "SERVICE"}
-                    </div>
-                    <div className="min-w-0 flex-1 text-left">
-                      <div className="truncate text-base font-bold text-[#16324f]">{title}</div>
-                      <div className="mt-1 truncate text-sm text-[#70839a]">{subtitle}</div>
-                      <div className="mt-2 text-sm font-semibold text-[#18c56e]">Status: {item.status || "pending"}</div>
-                    </div>
-                    <span className="text-xl text-[#9eb1c6]">›</span>
-                  </div>
-                )
-              })}
+        {/* SMART ACTIONS */}
+        {smartActions.map((action) => (
+          <section key={action.id} className="ndar-card rounded-[36px] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-bold text-[#16324f]">{action.title}</div>
+                <div className="mt-1 text-xs text-[#5a8fd1]">{action.subtitle}</div>
+              </div>
+              <button
+                onClick={() => navigate(action.route, action.state ? { state: action.state } : undefined)}
+                className="rounded-full bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white"
+              >
+                {action.actionLabel}
+              </button>
             </div>
-          ) : (
-            <div className="rounded-[24px] bg-[#f7fbff] px-5 py-6 text-sm text-[#70839a]">
-              Aucun service actif pour le moment. Lancez une course ou une demande artisanale.
-            </div>
-          )}
-        </section>
+          </section>
+        ))}
+
+        {/* MESSAGES D'ETAT */}
+        {error && (
+          <div className="rounded-[24px] bg-red-50 p-4 text-center text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="rounded-[24px] bg-[#edf5fb] p-4 text-center text-sm text-[#5a8fd1]">
+            Chargement...
+          </div>
+        )}
       </div>
-
     </div>
   )
 }
+const getStatusLabel = (status) => {
+  const labels = {
+    pending: "En attente",
+    accepted: "Acceptee",
+    ongoing: "En cours",
+    in_progress: "En cours",
+    quoted: "Devis envoye",
+    completed: "Terminee",
+    cancelled: "Annulee"
+  }
+  return labels[status] || status || "En cours"
+}
+
 
 export default Home
-

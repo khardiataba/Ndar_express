@@ -2,16 +2,17 @@ import { useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
+import AppIcon from "../components/AppIcon"
 
 const categories = [
-  { value: "menuisier", label: "Menuiserie", iconSymbol: "MENUISERIE", hint: "Portes, meubles, dressing", family: "artisan" },
-  { value: "ma\u00e7on", label: "Maconnerie", iconSymbol: "MACON", hint: "Murs, carrelage, terrasse", family: "artisan" },
-  { value: "peintre", label: "Peinture", iconSymbol: "PEINTURE", hint: "Finition interieure et facade", family: "artisan" },
-  { value: "\u00e9lectricien", label: "Electricite", iconSymbol: "ELECTRICITE", hint: "Pannes et installations", family: "artisan" },
-  { value: "p\u00e2tissier", label: "Food & Bakery", iconSymbol: "FOOD", hint: "Gateaux, traiteur, livraison", family: "food" },
-  { value: "coiffure-beaute", label: "Coiffure & Beaute", iconSymbol: "BEAUTE", hint: "Salon, tresses, maquillage", family: "beauty" },
-  { value: "livreur", label: "Livraison Express", iconSymbol: "LIVRAISON", hint: "Documents, colis et depots", family: "delivery" },
-  { value: "autres", label: "Autres", iconSymbol: "AUTRES", hint: "Autres besoins specifiques", family: "other" }
+  { value: "menuisier", label: "Menuiserie", icon: "tools", hint: "Portes, meubles, dressing", family: "artisan" },
+  { value: "maçon", label: "Maconnerie", icon: "tools", hint: "Murs, carrelage, terrasse", family: "artisan" },
+  { value: "peintre", label: "Peinture", icon: "star", hint: "Finition interieure et facade", family: "artisan" },
+  { value: "électricien", label: "Electricite", icon: "info", hint: "Pannes et installations", family: "artisan" },
+  { value: "pâtissier", label: "Food & Bakery", icon: "food", hint: "Gateaux, traiteur, livraison", family: "food" },
+  { value: "coiffure-beaute", label: "Coiffure & Beaute", icon: "user", hint: "Salon, tresses, maquillage", family: "beauty" },
+  { value: "livreur", label: "Livraison Express", icon: "delivery", hint: "Documents, colis et depots", family: "delivery" },
+  { value: "autres", label: "Autres", icon: "menu", hint: "Autres besoins specifiques", family: "other" }
 ]
 
 const categoryFamilyByValue = categories.reduce((acc, item) => {
@@ -36,10 +37,10 @@ const defaultClientLocation = {
 
 const serviceTitleByCategory = {
   menuisier: "Besoin de menuiserie",
-  "ma\u00e7on": "Besoin de maconnerie",
+  "maçon": "Besoin de maconnerie",
   peintre: "Besoin de peinture",
-  "\u00e9lectricien": "Besoin d'electricite",
-  "p\u00e2tissier": "Commande food",
+  "électricien": "Besoin d'electricite",
+  "pâtissier": "Commande food",
   "coiffure-beaute": "Besoin beaute",
   livreur: "Besoin de livraison",
   autres: "Besoin de service"
@@ -77,7 +78,7 @@ const normalizeCategory = (category, suggestedCategory, suggestedListing) => {
   if (suggestedListing?.category) return suggestedListing.category
   if (category) return category
   if (suggestedCategory === "beauty") return "coiffure-beaute"
-  if (suggestedCategory === "food") return "p\u00e2tissier"
+  if (suggestedCategory === "food") return "pâtissier"
   if (suggestedCategory === "artisan") return "menuisier"
   if (suggestedCategory === "delivery") return "livreur"
   if (suggestedCategory === "other") return "autres"
@@ -218,7 +219,7 @@ const Service = () => {
     lat: provider.coordinates?.lat,
     lng: provider.coordinates?.lng,
     label: provider.name,
-    emoji: selectedCategory?.iconSymbol || "•",
+    emoji: "•",
     background: provider.id === selectedProviderId ? "#0a3760" : "#165c96"
   })).filter((marker) => Number.isFinite(marker.lat) && Number.isFinite(marker.lng))
 
@@ -264,6 +265,7 @@ const Service = () => {
   return (
     <div className="min-h-screen px-4 pb-28 pt-5 lg:px-6">
       <div className="ndar-shell space-y-4">
+
         <header className="overflow-hidden rounded-[36px] border border-[#0b3154] bg-[linear-gradient(180deg,#0d416e_0%,#072a48_100%)] p-5 shadow-[0_24px_60px_rgba(8,35,62,0.30)]">
           <button onClick={() => navigate(-1)} className="mb-4 text-sm font-semibold text-[#f1c778]">← Retour</button>
           <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
@@ -335,8 +337,8 @@ const Service = () => {
                     : "border-[#e8ddd0] bg-white"
                 }`}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e8effa] text-xl">
-                  {item.iconSymbol}
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e8effa] text-[#1260a1]">
+                  <AppIcon name={item.icon} className="h-6 w-6" />
                 </div>
                 <div className="mt-3 text-sm font-bold text-[#16324f]">{item.label}</div>
                 <div className="mt-1 text-xs text-[#70839a]">{item.hint}</div>
@@ -623,10 +625,8 @@ const Service = () => {
           </aside>
         </div>
       </div>
-
     </div>
   )
 }
 
 export default Service
-

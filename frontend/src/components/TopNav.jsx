@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import LanguageSelector from "./LanguageSelector"
 
 const APP_NAME = "YOONWI"
 
@@ -69,9 +68,6 @@ const TopNav = () => {
 
           {/* Right: Language Selector + User Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Language Selector */}
-            <LanguageSelector />
-
             {/* User Profile Button */}
             <button
               onClick={() => navigate("/profile")}

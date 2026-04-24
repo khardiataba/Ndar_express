@@ -23,6 +23,7 @@ import RideDetails from "./pages/RideDetails"
 import ServiceDetails from "./pages/ServiceDetails"
 import Notifications from "./pages/Notifications"
 import Support from "./pages/Support"
+import SecuritySupport from "./pages/SecuritySupport"
 import PendingApproval from "./pages/PendingApproval"
 import ResetPassword from "./pages/ResetPassword"
 import ForgotPassword from "./pages/ForgotPassword"
@@ -153,6 +154,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <Support />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/security-support"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SecuritySupport />
             </MainLayout>
           </ProtectedRoute>
         }
