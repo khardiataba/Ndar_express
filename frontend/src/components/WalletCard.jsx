@@ -1,6 +1,6 @@
 // frontend/src/components/WalletCard.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import Toast from './Toast';
 
 const WalletCard = ({ className = '' }) => {
@@ -18,8 +18,8 @@ const WalletCard = ({ className = '' }) => {
     try {
       setLoading(true);
       const [walletResponse, transactionsResponse] = await Promise.all([
-        axios.get('/api/payments/wallet/balance'),
-        axios.get('/api/payments/wallet/transactions?limit=10')
+        api.get('/payments/wallet/balance'),
+        api.get('/payments/wallet/transactions?limit=10')
       ]);
 
       setWallet(walletResponse.data);

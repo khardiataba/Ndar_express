@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supportAPI } from '../api'
@@ -17,23 +17,21 @@ const SecuritySupport = () => {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       const response = await supportAPI.fetchTickets()
       // Filtrer uniquement les tickets de sécurité pour les non-admins
       const allTickets = response.data || []
-      const securityTickets = user?.role === 'admin'
-        ? allTickets.filter(t => t.category === 'security')
-        : allTickets.filter(t => t.category === 'security')
+      const securityTickets = allTickets.filter(t => t.category === 'security')
       setTickets(securityTickets)
     } catch (err) {
       setError(err.response?.data?.message || 'Impossible de charger les tickets.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const createTicket = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -60,7 +58,7 @@ const SecuritySupport = () => {
 
   useEffect(() => {
     fetchTickets()
-  }, [])
+  }, [fetchTickets])
 
   const handleRespond = async (ticketId) => {
     const responseText = (responseDrafts[ticketId] || '').trim()

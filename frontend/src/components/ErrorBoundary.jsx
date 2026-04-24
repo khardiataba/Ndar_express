@@ -1,6 +1,11 @@
 import React from 'react'
 import AppIcon from './AppIcon'
 
+const haveResetKeysChanged = (prevKeys = [], nextKeys = []) => {
+  if (prevKeys.length !== nextKeys.length) return true
+  return prevKeys.some((key, index) => key !== nextKeys[index])
+}
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
@@ -8,20 +13,33 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true }
+    return { hasError: true, error }
+  }
+
+  componentDidUpdate(prevProps) {
+    const previousKeys = prevProps.resetKeys || []
+    const currentKeys = this.props.resetKeys || []
+    if (this.state.hasError && haveResetKeysChanged(previousKeys, currentKeys)) {
+      this.resetBoundary()
+    }
   }
 
   componentDidCatch(error, errorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
     this.setState({
-      error,
       errorInfo
     })
   }
 
-  handleReset = () => {
+  resetBoundary = () => {
     this.setState({ hasError: false, error: null, errorInfo: null })
-    window.location.href = '/'
+  }
+
+  handleReset = () => {
+    this.resetBoundary()
+    if (typeof this.props.onReset === 'function') {
+      this.props.onReset()
+    }
   }
 
   render() {
@@ -45,7 +63,13 @@ class ErrorBoundary extends React.Component {
               onClick={this.handleReset}
               className="w-full bg-[#165c96] text-white py-2 px-4 rounded font-semibold hover:bg-[#0d4273] transition"
             >
-              Retourner à l'accueil
+              Réessayer
+            </button>
+            <button
+              onClick={() => window.location.assign('/')}
+              className="mt-3 w-full bg-white text-[#165c96] py-2 px-4 rounded font-semibold border border-[#165c96] hover:bg-[#f2f8fd] transition"
+            >
+              Retour à l'accueil
             </button>
           </div>
         </div>

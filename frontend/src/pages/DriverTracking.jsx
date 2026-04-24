@@ -78,27 +78,28 @@ const DriverTracking = () => {
         return
       }
 
-      navigator.geolocation.requestPermission().then((permission) => {
-        if (permission === "granted") {
+      if (navigator.permissions?.query) {
+        const permissionStatus = await navigator.permissions.query({ name: "geolocation" })
+        if (permissionStatus.state === "granted" || permissionStatus.state === "prompt") {
           setLocationPermission(true)
           startTrackingLocation()
         } else {
           setLocationPermission(false)
           showToast("Permission de localisation refusée", "warning")
         }
-      }).catch(() => {
-        // Fallback for non-permission API browsers
-        navigator.geolocation.getCurrentPosition(
-          () => {
-            setLocationPermission(true)
-            startTrackingLocation()
-          },
-          () => {
-            setLocationPermission(false)
-            showToast("Impossible d'accéder à votre position", "error")
-          }
-        )
-      })
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          setLocationPermission(true)
+          startTrackingLocation()
+        },
+        () => {
+          setLocationPermission(false)
+          showToast("Impossible d'accéder à votre position", "error")
+        }
+      )
     } catch (error) {
       console.error("Erreur permission localisation:", error)
       setLocationPermission(false)
@@ -109,12 +110,13 @@ const DriverTracking = () => {
     try {
       setLoading(true)
       const response = await api.get(`/rides/${rideId}`)
-      setRide(response.data.ride)
+      const rideData = response.data || null
+      setRide(rideData)
 
-      if (response.data.ride?.driverId) {
-        // Fetch driver info
-        const driverRes = await api.get(`/users/${response.data.ride.driverId}`)
-        setDriver(driverRes.data.user)
+      if (rideData?.driver) {
+        setDriver(rideData.driver)
+      } else {
+        setDriver(null)
       }
     } catch (error) {
       console.error("Erreur récupération course:", error)

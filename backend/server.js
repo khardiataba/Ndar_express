@@ -87,6 +87,21 @@ app.use("/api/support", supportRoutes)
 app.use("/api/rentals", rentalRoutes)
 app.use("/api/gallery", galleryRoutes)
 app.use("/api/user", userRoutes)
+app.use("/api/users", userRoutes)
+
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    message: `Route API introuvable: ${req.method} ${req.originalUrl}`
+  })
+})
+
+app.use((err, req, res, next) => {
+  console.error("Erreur non gérée:", err)
+  if (res.headersSent) return next(err)
+  return res.status(err.status || 500).json({
+    message: err.message || "Erreur interne du serveur"
+  })
+})
 
 const PORT = process.env.PORT || 5000
 

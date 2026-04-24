@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import { ToastProvider } from "./context/ToastContext"
 import ErrorBoundary from "./components/ErrorBoundary"
@@ -264,20 +264,28 @@ const SessionManager = () => {
   return null
 }
 
+const AppContent = () => {
+  const location = useLocation()
+
+  return (
+    <ErrorBoundary resetKeys={[location.pathname]}>
+      <AuthProvider>
+        <ToastProvider>
+          <SessionManager />
+          <div className="min-h-screen selection:bg-[#d7ae49]/30">
+            <AppRoutes />
+          </div>
+        </ToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
+  )
+}
+
 const App = () => {
   return (
-    <ErrorBoundary>
-      <Router>
-        <AuthProvider>
-          <ToastProvider>
-            <SessionManager />
-            <div className="min-h-screen selection:bg-[#d7ae49]/30">
-              <AppRoutes />
-            </div>
-          </ToastProvider>
-        </AuthProvider>
-      </Router>
-    </ErrorBoundary>
+    <Router>
+      <AppContent />
+    </Router>
   )
 }
 

@@ -2,9 +2,12 @@ import axios from "axios"
 
 const getDefaultApiBase = () => {
   if (typeof window !== "undefined" && window.location?.hostname) {
-    const protocol = window.location.protocol || "http:"
-    const hostname = window.location.hostname
-    return `${protocol}//${hostname}:5000/api`
+    const { protocol, hostname, origin } = window.location
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1"
+    if (isLocalhost) {
+      return `${protocol}//${hostname}:5000/api`
+    }
+    return `${origin}/api`
   }
 
   return "http://localhost:5000/api"

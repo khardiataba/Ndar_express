@@ -822,18 +822,4 @@ const Home = () => {
     </div>
   )
 }
-const getStatusLabel = (status) => {
-  const labels = {
-    pending: "En attente",
-    accepted: "Acceptee",
-    ongoing: "En cours",
-    in_progress: "En cours",
-    quoted: "Devis envoye",
-    completed: "Terminee",
-    cancelled: "Annulee"
-  }
-  return labels[status] || status || "En cours"
-}
-
-
 export default Home
