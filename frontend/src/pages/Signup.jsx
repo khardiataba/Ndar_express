@@ -353,7 +353,7 @@ const Signup = () => {
 
           {step === 1 && (
             <>
-              <p className="mt-5 text-sm text-[#5a8fd1]">
+              <p className="mt-5 text-sm text-[#4f6a84]">
                 {mappedRole === "client"
                   ? "Renseignez vos informations de connexion."
                   : "Renseignez vos informations, votre zone, votre disponibilite et vos donnees professionnelles avant de passer aux documents."}
@@ -373,19 +373,19 @@ const Signup = () => {
 
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#5a8fd1]">Email</label>
-                  <input value={email} onChange={(event) => { setEmail(event.target.value); clearFieldError("email") }} type="email" placeholder="nom@email.com" required className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]" />
+                  <input value={email} onChange={(event) => { setEmail(event.target.value); clearFieldError("email") }} type="email" placeholder="nom@email.com" required className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f3f7fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#1260a1]" />
                   {errors.email && <div className="mt-2 text-sm text-[#c45860]">{errors.email}</div>}
                 </div>
 
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Mot de passe</label>
-                  <input value={password} onChange={(event) => { setPassword(event.target.value); clearFieldError("password") }} type="password" placeholder="Au moins 6 caracteres" required className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]" />
+                  <input value={password} onChange={(event) => { setPassword(event.target.value); clearFieldError("password") }} type="password" placeholder="Au moins 6 caracteres" required className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f3f7fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#1260a1]" />
                   {errors.password && <div className="mt-2 text-sm text-[#c45860]">{errors.password}</div>}
                 </div>
 
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">Telephone</label>
-                  <input value={phone} onChange={(event) => { setPhone(event.target.value); clearFieldError("phone") }} type="tel" placeholder="+221 77 123 45 67" required className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]" />
+                  <input value={phone} onChange={(event) => { setPhone(event.target.value); clearFieldError("phone") }} type="tel" placeholder="+221 77 123 45 67" required className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f3f7fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#1260a1]" />
                   {errors.phone && <div className="mt-2 text-sm text-[#c45860]">{errors.phone}</div>}
                 </div>
               </div>
@@ -677,7 +677,7 @@ const Signup = () => {
             </>
           )}
 
-          <p className="mt-5 text-sm text-[#70839a]">
+          <p className="mt-5 text-sm text-[#4f6a84]">
             Vous preferez vous connecter ? <Link to="/login" className="font-semibold text-[#165c96]">Connexion</Link>
           </p>
         </form>

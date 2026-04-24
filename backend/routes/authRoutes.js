@@ -9,7 +9,7 @@ const { runAutomaticVerification, decideAccountStatus } = require("../services/d
 
 const router = express.Router()
 
-const allowedSignupRoles = new Set(["client", "provider", "driver", "other"])
+const allowedSignupRoles = new Set(["client", "provider", "driver", "other", "technician", "server"])
 const allowedProviderCategories = new Set([
   "Plomberie",
   "Electricite",
@@ -41,8 +41,9 @@ const isValidPlate = (value) => /^[A-Z]{1,3}-\d{2,4}-[A-Z]{1,3}$/.test(String(va
 const deliveryServiceCategories = new Set(["Coursier", "Livraison / Coursier"])
 
 const normalizeRole = (role) => {
-  if (role === "provider") return "technician"
-  return role || "client"
+  const cleanedRole = String(role || "").trim().toLowerCase()
+  if (cleanedRole === "provider" || cleanedRole === "other" || cleanedRole === "server") return "technician"
+  return cleanedRole || "client"
 }
 
 const sanitizeProviderDetails = (details = {}) => ({
@@ -68,7 +69,8 @@ const sanitizeProviderDetails = (details = {}) => ({
 
 const validateSignupPayload = ({ firstName, lastName, email, password, phone, role, providerDetails = {} }) => {
   const errors = []
-  const normalizedRole = normalizeRole(role)
+  const cleanedRole = String(role || "").trim().toLowerCase()
+  const normalizedRole = normalizeRole(cleanedRole)
   const cleanedFirstName = String(firstName || "").trim()
   const cleanedLastName = String(lastName || "").trim()
   const cleanedEmail = String(email || "").trim()
@@ -92,7 +94,7 @@ const validateSignupPayload = ({ firstName, lastName, email, password, phone, ro
     errors.push("Veuillez saisir un numero senegalais valide.")
   }
 
-  if (!allowedSignupRoles.has(role)) {
+  if (!allowedSignupRoles.has(cleanedRole)) {
     errors.push("Role d'inscription invalide.")
   }
 

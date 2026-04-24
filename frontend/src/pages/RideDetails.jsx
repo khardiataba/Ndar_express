@@ -1,23 +1,38 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import api from "../api"
+import { useAuth } from "../context/AuthContext"
 
 export default function RideDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [ride, setRide] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState("")
+  const [sendingMsg, setSendingMsg] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [statusMessage, setStatusMessage] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const loadRide = useCallback(async () => {
+    const response = await api.get(`/rides/${id}`)
+    setRide(response.data)
+  }, [id])
+
+  const loadMessages = useCallback(async () => {
+    const response = await api.get(`/rides/${id}/messages`)
+    setMessages(Array.isArray(response.data) ? response.data : [])
+  }, [id])
+
   useEffect(() => {
     let cancelled = false
-
-    const loadRide = async () => {
+    const bootstrap = async () => {
       try {
         setLoading(true)
         setError("")
-        const response = await api.get(`/rides/${id}`)
-        if (!cancelled) setRide(response.data)
+        await Promise.all([loadRide(), loadMessages()])
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError.response?.data?.message || "Impossible de charger la course.")
@@ -27,11 +42,49 @@ export default function RideDetails() {
       }
     }
 
-    if (id) loadRide()
+    if (id) bootstrap()
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, loadRide, loadMessages])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadRide()
+      loadMessages()
+    }, 10000)
+    return () => clearInterval(timer)
+  }, [loadRide, loadMessages])
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return
+    try {
+      setSendingMsg(true)
+      setError("")
+      await api.post(`/rides/${id}/messages`, { content: newMessage.trim() })
+      setNewMessage("")
+      await loadMessages()
+    } catch (sendError) {
+      setError(sendError.response?.data?.message || "Impossible d'envoyer le message.")
+    } finally {
+      setSendingMsg(false)
+    }
+  }
+
+  const handlePayRide = async () => {
+    try {
+      setPaying(true)
+      setError("")
+      setStatusMessage("")
+      await api.post(`/payments/ride/${id}/pay`)
+      await loadRide()
+      setStatusMessage("Paiement validé. La course peut être clôturée.")
+    } catch (payError) {
+      setError(payError.response?.data?.message || "Paiement impossible pour le moment.")
+    } finally {
+      setPaying(false)
+    }
+  }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>
   if (error) return <div className="min-h-screen p-4 flex items-center justify-center text-red-500">{error}</div>
@@ -44,7 +97,12 @@ export default function RideDetails() {
         ? "En cours"
         : ride.status === "completed"
           ? "Terminee"
-          : "En attente"
+        : "En attente"
+
+  const ridePaymentStatus = String(ride.paymentStatus || "pending")
+  const isClient = String(ride?.userId?._id || ride?.userId || "") === String(user?._id || "")
+  const messagingOpen = ["accepted", "ongoing", "completed"].includes(String(ride.status || ""))
+  const canPayNow = isClient && ["ongoing", "completed"].includes(String(ride.status || "")) && ridePaymentStatus !== "paid"
 
   return (
     <div className="min-h-screen bg-[#f7f1e6] pb-24">
@@ -64,6 +122,7 @@ export default function RideDetails() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
+        {statusMessage && <div className="rounded-2xl bg-[#eefaf2] px-4 py-3 text-sm text-[#178b55]">{statusMessage}</div>}
         <div className="bg-white rounded-[28px] p-5 shadow-lg">
           <h3 className="text-lg font-bold text-[#16324f] mb-3">Trajet</h3>
           <div className="space-y-3 text-sm">
@@ -85,6 +144,15 @@ export default function RideDetails() {
                 <div className="mt-1 font-semibold text-[#16324f]">{ride.durationMin ? `${ride.durationMin} min` : "--"}</div>
               </div>
             </div>
+            <div className="mt-3 rounded-2xl bg-[#f8fbff] p-3">
+              <div className="text-xs uppercase tracking-[0.16em] text-[#5a8fd1]">Paiement</div>
+              <div className={`mt-1 font-semibold ${ridePaymentStatus === "paid" ? "text-[#178b55]" : "text-[#c45860]"}`}>
+                {ridePaymentStatus === "paid" ? "Réglé" : "En attente"}
+              </div>
+              <div className="mt-1 text-xs text-[#70839a]">
+                Commission app: {Number(ride.appCommissionPercent || 10)}% ({Number(ride.appCommissionAmount || 0).toLocaleString()} FCFA)
+              </div>
+            </div>
           </div>
         </div>
 
@@ -103,8 +171,60 @@ export default function RideDetails() {
             >
               Retour dashboard chauffeur
             </button>
+            {canPayNow && (
+              <button
+                onClick={handlePayRide}
+                disabled={paying}
+                className="rounded-2xl bg-[#18c56e] px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {paying ? "Paiement..." : "Payer maintenant"}
+              </button>
+            )}
           </div>
         </div>
+
+        {messagingOpen && (
+          <div className="bg-white rounded-[28px] p-5 shadow-lg">
+            <h3 className="text-lg font-bold text-[#16324f] mb-3">Chat client/chauffeur</h3>
+            <div className="h-56 overflow-y-auto rounded-2xl bg-[#f7f1e6] p-3 space-y-2">
+              {messages.length === 0 ? (
+                <p className="py-16 text-center text-sm text-[#70839a]">Aucun message pour le moment.</p>
+              ) : (
+                messages.map((msg) => {
+                  const senderId = typeof msg.senderId === "object" ? msg.senderId?._id : msg.senderId
+                  const mine = String(senderId || "") === String(user?._id || "")
+                  return (
+                    <div key={msg._id || `${msg.createdAt}-${senderId}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-xs rounded-2xl px-3 py-2 text-sm ${mine ? "bg-[#1260a1] text-white" : "bg-white text-[#16324f] border border-[#e2eaf2]"}`}>
+                        <p>{msg.content}</p>
+                        <p className={`mt-1 text-xs ${mine ? "text-white/70" : "text-[#70839a]"}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(event) => setNewMessage(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleSendMessage()}
+                placeholder="Écrire un message..."
+                className="flex-1 rounded-2xl border border-[#dce7f0] px-4 py-3 text-sm outline-none focus:border-[#1260a1]"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={sendingMsg || !newMessage.trim()}
+                className="rounded-2xl bg-[#1260a1] px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {sendingMsg ? "..." : "Envoyer"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

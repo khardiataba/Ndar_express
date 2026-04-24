@@ -48,7 +48,7 @@ const Login = () => {
           <div className="ndar-chip">Connexion securisee</div>
           <h1 className="mt-4 font-['Sora'] text-3xl font-extrabold text-[#16324f]">Connexion</h1>
           {draft?.firstName && (
-            <p className="mt-2 text-sm text-[#70839a]">
+            <p className="mt-2 text-sm text-[#4f6a84]">
               Bonjour {draft.firstName} {draft.lastName}, on reprend votre espace {draft.role === "client" ? "client" : draft.role === "provider" ? "prestataire" : "chauffeur"}.
             </p>
           )}
@@ -61,7 +61,7 @@ const Login = () => {
                 onChange={(event) => setEmail(event.target.value)}
                 type="email"
                 required
-                className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]"
+                className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f3f7fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#1260a1]"
               />
             </div>
 
@@ -72,7 +72,7 @@ const Login = () => {
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
                 required
-                className="w-full rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 outline-none focus:border-[#1260a1]"
+                className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f3f7fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#1260a1]"
               />
             </div>
           </div>
@@ -87,7 +87,7 @@ const Login = () => {
             {loading ? "Connexion..." : "Se connecter"}
           </button>
 
-          <p className="mt-5 text-sm text-[#70839a]">
+          <p className="mt-5 text-sm text-[#4f6a84]">
             Nouveau sur l'app ? <Link to="/" className="font-semibold text-[#165c96]">Commencer ici</Link>
           </p>
         </form>

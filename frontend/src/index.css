@@ -1,8 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap");
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --ndar-blue: #1260a1;
@@ -88,6 +85,18 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--ndar-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #60788f;
+  opacity: 1;
 }
 
 button {

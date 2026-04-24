@@ -1,28 +1,33 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { saveAuthDraft } from "../authDraft"
+import AppIcon from "../components/AppIcon"
 
 const roleOptions = [
   {
     value: "client",
+    icon: "car",
     label: "Client",
     title: "Je reserve une course",
     description: "Vous accedez directement a la carte, au calcul d'itineraire et a la reservation moderne et intuitive."
   },
   {
     value: "provider",
+    icon: "service",
     label: "Prestataire",
     title: "Je propose un service",
     description: "Vous pourrez repondre a plusieurs questions sur votre activite, vos disponibilites et votre zone."
   },
   {
     value: "driver",
+    icon: "moto",
     label: "Chauffeur",
     title: "Je conduis",
     description: "Vous pourrez renseigner votre vehicule, votre zone et vos horaires avant validation."
   },
   {
     value: "other",
+    icon: "tools",
     label: "Autres",
     title: "Je propose une autre activite",
     description: "Pour les profils qui ne sont ni chauffeurs, ni livreurs, ni dans les categories deja prevues."
@@ -77,20 +82,20 @@ const Welcome = () => {
         <section className="ndar-card rounded-[38px] p-6">
           <div className="ndar-chip">Demarrage rapide</div>
           <h1 className="mt-4 font-['Sora'] text-3xl font-extrabold text-[#16324f]">Bienvenue a bord</h1>
-          <p className="mt-2 text-sm text-[#5a8fd1]">Commencez par votre identite et choisissez votre parcours dans l'app.</p>
+          <p className="mt-2 text-sm text-[#44617e]">Commencez par votre identite et choisissez votre parcours dans l'app.</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <input
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               placeholder="Prenom"
-              className="w-full rounded-2xl border border-[#e2eaf2] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[#165c96]"
+              className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f1f6fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#165c96]"
             />
             <input
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
               placeholder="Nom"
-              className="w-full rounded-2xl border border-[#e2eaf2] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[#165c96]"
+              className="w-full rounded-2xl border border-[#c9d7e4] bg-[#f1f6fb] px-4 py-3 text-[#102c45] outline-none focus:border-[#165c96]"
             />
           </div>
 
@@ -106,14 +111,14 @@ const Welcome = () => {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-bold uppercase tracking-[0.18em] text-[#1260a1]">{option.label}</div>
+                    <div className="text-sm font-bold uppercase tracking-[0.18em] text-[#114e84]">{option.label}</div>
                     <div className="mt-1 text-base font-bold text-[#16324f]">{option.title}</div>
                   </div>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${role === option.value ? "bg-white text-[#1260a1]" : "bg-[#f6efe4]"}`}>
-                    {option.value === "client" ? "TAXI" : option.value === "provider" ? "SERVICE" : option.value === "driver" ? "CAR" : "AUTRES"}
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${role === option.value ? "bg-white text-[#1260a1]" : "bg-[#eef3f8] text-[#31526f]"}`}>
+                    <AppIcon name={option.icon} className="h-6 w-6" />
                   </div>
                 </div>
-                <p className="mt-2 text-sm text-[#5a8fd1]">{option.description}</p>
+                <p className="mt-2 text-sm text-[#44617e]">{option.description}</p>
               </button>
             ))}
           </div>
@@ -128,7 +133,7 @@ const Welcome = () => {
             Continuer
           </button>
 
-          <p className="mt-5 text-sm text-[#5a8fd1]">
+          <p className="mt-5 text-sm text-[#44617e]">
             Vous avez deja un compte ? <Link to="/login" className="font-semibold text-[#165c96]">Connexion</Link>
           </p>
         </section>

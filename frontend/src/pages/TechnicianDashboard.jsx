@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import MapPicker from "../components/MapPicker"
 import useShakeDetection from "../hooks/useShakeDetection"
+import ProviderPortfolio from "../components/ProviderPortfolio"
 
 const isSameDay = (left, right) =>
   left.getFullYear() === right.getFullYear() &&
@@ -913,6 +914,15 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                   ))}
                 </div>
               )}
+            </section>
+            <section className="ndar-card rounded-[30px] p-5">
+              <div className="mb-4">
+                <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Portfolio prestataire</h2>
+                <p className="text-sm text-[#5a8fd1]">
+                  Ajoutez des aperçus de vos réalisations, vos tarifs, et vos offres principales.
+                </p>
+              </div>
+              <ProviderPortfolio />
             </section>
           </>
         )}

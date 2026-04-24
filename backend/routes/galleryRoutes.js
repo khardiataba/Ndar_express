@@ -7,6 +7,27 @@ const fs = require("fs")
 
 const router = express.Router()
 
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const sanitizePricing = (input = {}) => {
+  const startingPrice = Math.max(0, toNumber(input.startingPrice, 0))
+  const maxPrice = Math.max(startingPrice, toNumber(input.maxPrice, startingPrice))
+  const durationMinutes = Math.max(0, Math.round(toNumber(input.durationMinutes, 0)))
+  const currency = String(input.currency || "XOF").trim().slice(0, 6) || "XOF"
+  const unit = String(input.unit || "service").trim().slice(0, 30) || "service"
+
+  return {
+    startingPrice,
+    maxPrice,
+    durationMinutes,
+    currency,
+    unit
+  }
+}
+
 // Configure multer for image upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -64,6 +85,7 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
     }
 
     const { title, description, category = "work", tags = [] } = req.body
+    const pricing = sanitizePricing(req.body)
 
     const imageUrl = `/uploads/gallery/${req.file.filename}`
 
@@ -85,6 +107,7 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
       thumbnailUrl: imageUrl,
       category: category,
       tags: Array.isArray(tags) ? tags : tags.split(","),
+      pricing,
       uploadedAt: new Date()
     })
 
@@ -129,6 +152,7 @@ router.post("/:providerId/upload-before-after", authMiddleware, upload.array("im
     }
 
     const { title, description, tags = [] } = req.body
+    const pricing = sanitizePricing(req.body)
 
     const beforeUrl = `/uploads/gallery/${req.files[0].filename}`
     const afterUrl = `/uploads/gallery/${req.files[1].filename}`
@@ -154,6 +178,7 @@ router.post("/:providerId/upload-before-after", authMiddleware, upload.array("im
         afterUrl: afterUrl
       },
       tags: Array.isArray(tags) ? tags : tags.split(","),
+      pricing,
       uploadedAt: new Date()
     })
 
@@ -256,6 +281,48 @@ router.get("/provider/:providerId/category/:category", async (req, res) => {
     res.json({ success: true, items })
   } catch (error) {
     res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Save service offerings with tariffs
+router.put("/:providerId/offerings", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Not authorized" })
+    }
+
+    const rawOfferings = Array.isArray(req.body?.offerings) ? req.body.offerings : []
+    const offerings = rawOfferings
+      .map((item) => {
+        const title = String(item?.title || "").trim().slice(0, 80)
+        if (!title) return null
+        const description = String(item?.description || "").trim().slice(0, 240)
+        return {
+          title,
+          description,
+          ...sanitizePricing(item)
+        }
+      })
+      .filter(Boolean)
+      .slice(0, 20)
+
+    let gallery = await ProviderGallery.findOne({ provider: req.params.providerId })
+    if (!gallery) {
+      gallery = new ProviderGallery({
+        provider: req.params.providerId,
+        galleryItems: [],
+        offerings: []
+      })
+    }
+
+    gallery.offerings = offerings
+    gallery.updatedAt = new Date()
+    await gallery.save()
+
+    return res.json({ success: true, offerings: gallery.offerings, gallery })
+  } catch (error) {
+    console.error("Error saving offerings:", error)
+    return res.status(500).json({ success: false, error: error.message })
   }
 })
 

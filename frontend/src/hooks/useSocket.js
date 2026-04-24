@@ -12,9 +12,9 @@ const useSocket = () => {
   useEffect(() => {
     if (user && token) {
       // Créer la connexion socket
-      const baseApiUrl = process.env.REACT_APP_API_URL || ''
+      const baseApiUrl = import.meta.env.VITE_API_URL || ''
       const socketServerUrl =
-        process.env.REACT_APP_SOCKET_URL ||
+        import.meta.env.VITE_SOCKET_URL ||
         baseApiUrl.replace(/\/api$/, '') ||
         'http://localhost:5000'
 

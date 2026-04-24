@@ -10,7 +10,12 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
     title: "",
     description: "",
     category: "work",
-    tags: ""
+    tags: "",
+    startingPrice: "",
+    maxPrice: "",
+    currency: "XOF",
+    unit: "service",
+    durationMinutes: ""
   })
 
   const handleFileChange = useCallback(
@@ -44,6 +49,11 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
       formData.append("description", itemDetails.description)
       formData.append("category", itemDetails.category)
       formData.append("tags", itemDetails.tags)
+      formData.append("startingPrice", itemDetails.startingPrice || "0")
+      formData.append("maxPrice", itemDetails.maxPrice || itemDetails.startingPrice || "0")
+      formData.append("currency", itemDetails.currency || "XOF")
+      formData.append("unit", itemDetails.unit || "service")
+      formData.append("durationMinutes", itemDetails.durationMinutes || "0")
 
       const response = await api.post(`/gallery/${providerId}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
@@ -51,7 +61,17 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
 
       if (response.data.success) {
         setUploadedItems([])
-        setItemDetails({ title: "", description: "", category: "work", tags: "" })
+        setItemDetails({
+          title: "",
+          description: "",
+          category: "work",
+          tags: "",
+          startingPrice: "",
+          maxPrice: "",
+          currency: "XOF",
+          unit: "service",
+          durationMinutes: ""
+        })
         if (onUploadSuccess) {
           onUploadSuccess(response.data.gallery)
         }
@@ -77,6 +97,11 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
       formData.append("title", itemDetails.title || "Avant/Après")
       formData.append("description", itemDetails.description)
       formData.append("tags", itemDetails.tags)
+      formData.append("startingPrice", itemDetails.startingPrice || "0")
+      formData.append("maxPrice", itemDetails.maxPrice || itemDetails.startingPrice || "0")
+      formData.append("currency", itemDetails.currency || "XOF")
+      formData.append("unit", itemDetails.unit || "service")
+      formData.append("durationMinutes", itemDetails.durationMinutes || "0")
 
       const response = await api.post(`/gallery/${providerId}/upload-before-after`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
@@ -84,7 +109,17 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
 
       if (response.data.success) {
         setUploadedItems([])
-        setItemDetails({ title: "", description: "", category: "work", tags: "" })
+        setItemDetails({
+          title: "",
+          description: "",
+          category: "work",
+          tags: "",
+          startingPrice: "",
+          maxPrice: "",
+          currency: "XOF",
+          unit: "service",
+          durationMinutes: ""
+        })
         if (onUploadSuccess) {
           onUploadSuccess(response.data.gallery)
         }
@@ -201,6 +236,72 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
             className="w-full p-2 border border-gray-300 rounded"
             disabled={isLoading}
           />
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tarif minimum</label>
+            <input
+              type="number"
+              name="startingPrice"
+              min="0"
+              value={itemDetails.startingPrice}
+              onChange={handleInputChange}
+              placeholder="Ex: 5000"
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tarif maximum</label>
+            <input
+              type="number"
+              name="maxPrice"
+              min="0"
+              value={itemDetails.maxPrice}
+              onChange={handleInputChange}
+              placeholder="Ex: 15000"
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Devise</label>
+            <input
+              type="text"
+              name="currency"
+              value={itemDetails.currency}
+              onChange={handleInputChange}
+              placeholder="XOF"
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Unité</label>
+            <input
+              type="text"
+              name="unit"
+              value={itemDetails.unit}
+              onChange={handleInputChange}
+              placeholder="service / heure / m2"
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Durée estimée (min)</label>
+            <input
+              type="number"
+              name="durationMinutes"
+              min="0"
+              value={itemDetails.durationMinutes}
+              onChange={handleInputChange}
+              placeholder="Ex: 45"
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+            />
+          </div>
         </div>
       </div>
 

@@ -23,6 +23,13 @@ const GalleryItemSchema = new mongoose.Schema(
       afterUrl: String
     },
     tags: [String],
+    pricing: {
+      startingPrice: { type: Number, default: 0 },
+      maxPrice: { type: Number, default: 0 },
+      currency: { type: String, default: "XOF" },
+      unit: { type: String, default: "service" },
+      durationMinutes: { type: Number, default: 0 }
+    },
     uploadedAt: {
       type: Date,
       default: Date.now
@@ -40,6 +47,16 @@ const ProviderGallerySchema = new mongoose.Schema(
       unique: true
     },
     galleryItems: [GalleryItemSchema],
+    offerings: [
+      {
+        title: { type: String, default: "" },
+        description: { type: String, default: "" },
+        startingPrice: { type: Number, default: 0 },
+        maxPrice: { type: Number, default: 0 },
+        currency: { type: String, default: "XOF" },
+        unit: { type: String, default: "service" }
+      }
+    ],
     coverImage: String,
     totalImages: {
       type: Number,

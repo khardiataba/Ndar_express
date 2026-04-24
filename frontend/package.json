@@ -16,41 +16,23 @@
     "react-i18next": "^17.0.4",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.14.2",
-    "react-scripts": "^5.0.1",
     "socket.io-client": "^4.8.3",
-    "tailwindcss-animate": "^1.0.7",
-    "web-vitals": "^5.2.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css",
     "watch:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.10",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.10"
   }
 }

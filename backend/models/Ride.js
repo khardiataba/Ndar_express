@@ -84,6 +84,12 @@ const rideSchema = new mongoose.Schema({
     default: () => ({})
   },
   paymentMethod: { type: String, enum: ["Cash", "Wave", "OM", "Card"], default: "Cash" },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "refunded"],
+    default: "pending"
+  },
+  paidAt: { type: Date, default: null },
   distanceKm: { type: Number, default: null },
   durationMin: { type: Number, default: null },
   safetyCode: { type: String, default: null, select: false },

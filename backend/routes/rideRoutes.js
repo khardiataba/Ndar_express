@@ -2,6 +2,7 @@ const express = require("express")
 const crypto = require("crypto")
 const https = require("https")
 const Ride = require("../models/Ride")
+const Message = require("../models/Message")
 const User = require("../models/User")
 const socketManager = require("../socket/socketManager")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
@@ -11,6 +12,14 @@ const { getPaginationParams, buildPaginatedResponse } = require("../utils/pagina
 const { validateLocationPair } = require("../utils/locationValidation")
 
 const router = express.Router()
+const objectIdRegex = /^[0-9a-fA-F]{24}$/
+
+const validateRideId = (req, res, next) => {
+  if (!objectIdRegex.test(String(req.params.id || ""))) {
+    return res.status(400).json({ message: "Identifiant de course invalide" })
+  }
+  return next()
+}
 
 const haversineDistanceKm = (pickup, destination) => {
   const toRadians = (value) => (value * Math.PI) / 180
@@ -330,32 +339,6 @@ router.get("/", authMiddleware, requireVerified, async (req, res) => {
 })
 
 // Get single ride by ID
-router.get("/:id", authMiddleware, requireVerified, async (req, res) => {
-  try {
-    const { id } = req.params
-    const ride = await Ride.findById(id).populate('userId', 'name phone email profilePhoto').populate('driverId', 'name profilePhoto phone email')
-    
-    if (!ride) {
-      return res.status(404).json({ message: "Course non trouvée" })
-    }
-
-    // Check authorization
-    const isClient = ride.userId._id.toString() === req.user._id.toString()
-    const isDriver = ride.driverId?._id.toString() === req.user._id.toString()
-    const isAdmin = req.user.role === 'admin'
-    
-    if (!isClient && !isDriver && !isAdmin) {
-      return res.status(403).json({ message: "Accès non autorisé" })
-    }
-
-    const serialized = await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role })
-    return res.json(serialized)
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Erreur serveur" })
-  }
-})
-
 // Courses disponibles (pour chauffeurs)
 router.get(
   "/available",
@@ -373,11 +356,38 @@ router.get(
   }
 )
 
+// Get single ride by ID
+router.get("/:id", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+  try {
+    const { id } = req.params
+    const ride = await Ride.findById(id).populate("userId", "name phone email profilePhoto").populate("driverId", "name profilePhoto phone email")
+
+    if (!ride) {
+      return res.status(404).json({ message: "Course non trouvée" })
+    }
+
+    const isClient = ride.userId._id.toString() === req.user._id.toString()
+    const isDriver = ride.driverId?._id.toString() === req.user._id.toString()
+    const isAdmin = req.user.role === "admin"
+
+    if (!isClient && !isDriver && !isAdmin) {
+      return res.status(403).json({ message: "Accès non autorisé" })
+    }
+
+    const serialized = await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role })
+    return res.json(serialized)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
 // Accepter une course (chauffeur)
 router.patch(
   "/:id/accept",
   authMiddleware,
   requireVerified,
+  validateRideId,
   requireRole("driver"),
   async (req, res) => {
     try {
@@ -437,6 +447,7 @@ router.patch(
   "/:id/start",
   authMiddleware,
   requireVerified,
+  validateRideId,
   requireRole("driver"),
   async (req, res) => {
     try {
@@ -497,6 +508,7 @@ router.patch(
   "/:id/complete",
   authMiddleware,
   requireVerified,
+  validateRideId,
   async (req, res) => {
     try {
       const ride = await Ride.findById(req.params.id)
@@ -511,6 +523,10 @@ router.patch(
 
       if (ride.status !== "ongoing") {
         return res.status(400).json({ message: "Seules les courses en cours peuvent etre terminees" })
+      }
+
+      if (ride.paymentStatus !== "paid") {
+        return res.status(400).json({ message: "Le paiement client et la commission doivent être réglés avant la clôture" })
       }
 
       ride.status = "completed"
@@ -554,7 +570,65 @@ router.patch(
   }
 )
 
-router.post("/:id/safety-report", authMiddleware, requireVerified, async (req, res) => {
+// Chat messages for a ride
+router.get("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) {
+      return res.status(404).json({ message: "Course non trouvée" })
+    }
+
+    if (!canAccessRide(ride, req.user)) {
+      return res.status(403).json({ message: "Accès refusé" })
+    }
+
+    const messages = await Message.find({ rideId: req.params.id })
+      .sort({ createdAt: 1 })
+      .populate("senderId", "name firstName lastName profilePhotoUrl profilePhoto")
+
+    return res.json(messages)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.post("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) {
+      return res.status(404).json({ message: "Course non trouvée" })
+    }
+
+    if (!canAccessRide(ride, req.user)) {
+      return res.status(403).json({ message: "Accès refusé" })
+    }
+
+    if (!["accepted", "ongoing", "completed"].includes(String(ride.status || ""))) {
+      return res.status(400).json({ message: "Conversation indisponible pour ce statut de course" })
+    }
+
+    const content = String(req.body?.content || "").trim()
+    if (!content) {
+      return res.status(400).json({ message: "Le message ne peut pas être vide" })
+    }
+
+    const message = await Message.create({
+      rideId: req.params.id,
+      senderId: req.user._id,
+      senderRole: req.user.role,
+      content: content.slice(0, 1000)
+    })
+
+    const populated = await message.populate("senderId", "name firstName lastName profilePhotoUrl profilePhoto")
+    return res.status(201).json(populated)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.post("/:id/safety-report", authMiddleware, requireVerified, validateRideId, async (req, res) => {
   try {
     const { type = "incident", message = "", location = {} } = req.body || {}
     const ride = await Ride.findById(req.params.id)

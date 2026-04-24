@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Ride = require('../models/Ride');
 const ServiceRequest = require('../models/ServiceRequest');
 const stripePayments = require('../utils/stripePayments');
+const { APP_COMMISSION_PERCENT } = require('../utils/pricing');
 
 class PaymentService {
   /**
@@ -130,8 +131,8 @@ class PaymentService {
       const driverId = ride.driver._id;
       const amount = ride.finalPrice || ride.estimatedPrice;
 
-      // Calculer la commission Yoonbi (10%)
-      const commission = Math.round(amount * 0.1);
+      // Calculer la commission application (10% par défaut)
+      const commission = Math.round((amount * APP_COMMISSION_PERCENT) / 100);
       const driverAmount = amount - commission;
 
       // Débiter le passager
@@ -220,8 +221,8 @@ class PaymentService {
       const providerId = serviceRequest.provider._id;
       const amount = serviceRequest.finalPrice || serviceRequest.estimatedPrice;
 
-      // Calculer la commission Yoonbi (10%)
-      const commission = Math.round(amount * 0.1);
+      // Calculer la commission application (10% par défaut)
+      const commission = Math.round((amount * APP_COMMISSION_PERCENT) / 100);
       const providerAmount = amount - commission;
 
       // Débiter le client

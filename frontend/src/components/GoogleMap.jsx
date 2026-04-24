@@ -277,7 +277,7 @@ const GoogleMap = ({
       )}
 
       <Wrapper
-        apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY"}
+        apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY"}
         libraries={['places', 'geometry']}
         callback={initMap}
         render={render}

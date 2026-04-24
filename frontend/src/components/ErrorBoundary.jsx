@@ -54,7 +54,7 @@ class ErrorBoundary extends React.Component {
             <p className="text-gray-600 mb-4">
               Notre équipe a été notifiée. Veuillez réessayer.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="bg-gray-100 p-3 rounded text-xs text-gray-700 mb-4 max-h-32 overflow-auto">
                 <pre>{this.state.error.toString()}</pre>
               </div>

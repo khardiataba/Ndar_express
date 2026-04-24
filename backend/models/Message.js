@@ -10,7 +10,14 @@ const messageSchema = new mongoose.Schema(
     serviceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceRequest',
-      required: true,
+      required: false,
+      index: true
+    },
+
+    rideId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Ride',
+      required: false,
       index: true
     },
     
@@ -53,8 +60,16 @@ const messageSchema = new mongoose.Schema(
   }
 )
 
+messageSchema.pre("validate", function validateContext(next) {
+  if (!this.serviceId && !this.rideId) {
+    return next(new Error("Message must reference a service or a ride"))
+  }
+  return next()
+})
+
 // Indexes
 messageSchema.index({ serviceId: 1, createdAt: -1 })
+messageSchema.index({ rideId: 1, createdAt: -1 })
 messageSchema.index({ senderId: 1 })
 messageSchema.index({ read: 1 })
 

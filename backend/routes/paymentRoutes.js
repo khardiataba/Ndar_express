@@ -4,6 +4,7 @@ const router = express.Router()
 const paymentService = require('../services/paymentService')
 const atomicPaymentService = require('../services/atomicPaymentService')
 const { authMiddleware } = require('../middleware/auth')
+const { rideCommission } = require('../utils/pricing')
 
 // Obtenir le solde du wallet
 router.get('/wallet/balance', authMiddleware, async (req, res) => {
@@ -107,13 +108,25 @@ router.post('/ride/:rideId/pay', authMiddleware, async (req, res) => {
     }
 
     // Check ride status
-    if (ride.status !== 'completed') {
-      return res.status(400).json({ message: 'La course doit être terminée avant le paiement' })
+    if (!['ongoing', 'completed'].includes(String(ride.status || ''))) {
+      return res.status(400).json({ message: 'Le paiement est autorisé uniquement pour une course en cours ou terminée' })
+    }
+
+    if (ride.paymentStatus === 'paid') {
+      return res.status(400).json({ message: 'Cette course a déjà été réglée' })
     }
 
     // Validate price
     if (!ride.price || ride.price <= 0) {
       return res.status(400).json({ message: 'Prix invalide' })
+    }
+
+    // Ensure commission values exist and stay aligned to pricing utility
+    if (!Number.isFinite(Number(ride.appCommissionAmount)) || Number(ride.appCommissionAmount) <= 0) {
+      const commission = rideCommission(ride.price)
+      ride.appCommissionPercent = commission.appCommissionPercent
+      ride.appCommissionAmount = commission.appCommissionAmount
+      ride.providerNetAmount = commission.providerNetAmount
     }
 
     // Atomic debit
@@ -130,8 +143,8 @@ router.post('/ride/:rideId/pay', authMiddleware, async (req, res) => {
 
     // Credit driver
     if (ride.driverId) {
-      const driverCommission = ride.appCommissionAmount || 0
-      const driverAmount = ride.price - driverCommission
+      const driverCommission = Number(ride.appCommissionAmount || 0)
+      const driverAmount = Math.max(0, ride.price - driverCommission)
       
       await atomicPaymentService.atomicCredit(ride.driverId, driverAmount, {
         description: `Paiement course ${rideId}`,
@@ -142,7 +155,8 @@ router.post('/ride/:rideId/pay', authMiddleware, async (req, res) => {
     }
 
     // Update ride payment status
-    ride.status = 'paid'
+    ride.paymentStatus = 'paid'
+    ride.paidAt = new Date()
     await ride.save()
 
     return res.json({

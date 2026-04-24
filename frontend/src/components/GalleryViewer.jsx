@@ -32,6 +32,18 @@ const GalleryViewer = ({ items = [], providerName = "Service Provider" }) => {
     return labels[category] || category
   }
 
+  const formatPricing = (pricing = {}) => {
+    const starting = Number(pricing.startingPrice || 0)
+    const max = Number(pricing.maxPrice || 0)
+    const currency = pricing.currency || "XOF"
+    const unit = pricing.unit || "service"
+    if (!starting && !max) return null
+    if (max > starting) {
+      return `${starting.toLocaleString()} - ${max.toLocaleString()} ${currency} / ${unit}`
+    }
+    return `${Math.max(starting, max).toLocaleString()} ${currency} / ${unit}`
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Main Image Viewer */}
@@ -89,6 +101,16 @@ const GalleryViewer = ({ items = [], providerName = "Service Provider" }) => {
       <div className="p-4 border-b">
         <h3 className="font-bold text-lg mb-1">{currentItem.title}</h3>
         {currentItem.description && <p className="text-gray-600 text-sm mb-2">{currentItem.description}</p>}
+        {formatPricing(currentItem.pricing) && (
+          <div className="mb-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Tarif: {formatPricing(currentItem.pricing)}
+          </div>
+        )}
+        {Number(currentItem?.pricing?.durationMinutes || 0) > 0 && (
+          <div className="mb-2 text-xs text-gray-600">
+            Durée estimée: {Number(currentItem.pricing.durationMinutes)} min
+          </div>
+        )}
 
         {/* Tags */}
         {currentItem.tags && currentItem.tags.length > 0 && (

@@ -28,7 +28,7 @@ const getStoredToken = () => {
 }
 
 const api = axios.create({
-  baseURL: normalizeBaseURL(process.env.REACT_APP_API_URL),
+  baseURL: normalizeBaseURL(import.meta.env.VITE_API_URL),
   timeout: 15000
 })
 

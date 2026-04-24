@@ -1,3 +1,5 @@
+const APP_COMMISSION_PERCENT = 10
+
 const roundToNearestHundred = (value) => Math.max(0, Math.round(value / 100) * 100)
 
 const STUDENT_BUS_FARES = {
@@ -48,8 +50,8 @@ const attachCommission = (grossAmount, percent) => {
   }
 }
 
-const rideCommission = (price) => attachCommission(price, 10)
-const serviceCommission = (price) => attachCommission(price, 10)
+const rideCommission = (price) => attachCommission(price, APP_COMMISSION_PERCENT)
+const serviceCommission = (price) => attachCommission(price, APP_COMMISSION_PERCENT)
 
 
 module.exports = {
@@ -58,5 +60,6 @@ module.exports = {
   normalizeStudentBusZone,
   rideCommission,
   serviceCommission,
-  STUDENT_BUS_FARES
+  STUDENT_BUS_FARES,
+  APP_COMMISSION_PERCENT
 }

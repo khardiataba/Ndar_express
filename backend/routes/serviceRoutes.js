@@ -4,7 +4,7 @@ const ServiceRequest = require("../models/ServiceRequest")
 const Message = require("../models/Message")
 const User = require("../models/User")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
-const { serviceCommission } = require("../utils/pricing")
+const { APP_COMMISSION_PERCENT, serviceCommission } = require("../utils/pricing")
 const { createCheckoutSession, getStripeConfig } = require("../utils/stripePayments")
 
 const router = express.Router()
@@ -332,7 +332,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
       clientBudget: 0,
       price: 0,
       quotedPrice: 0,
-      appCommissionPercent: 10,
+      appCommissionPercent: APP_COMMISSION_PERCENT,
       appCommissionAmount: 0,
       providerNetAmount: 0,
       platformContributionStatus: "due",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supportAPI } from '../api'
+import useShakeDetection from '../hooks/useShakeDetection'
 
 const SecuritySupport = () => {
   const navigate = useNavigate()
@@ -14,8 +15,30 @@ const SecuritySupport = () => {
   const [responseDrafts, setResponseDrafts] = useState({})
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [sendingShakeAlert, setSendingShakeAlert] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+
+  const sendShakeDangerAlert = useCallback(async () => {
+    try {
+      setSendingShakeAlert(true)
+      setError(null)
+      await supportAPI.createTicket(
+        'SOS secousse détectée',
+        "Alerte automatique suite à une secousse détectée. Utilisateur potentiellement en danger immédiat.",
+        'security',
+        'high'
+      )
+      setSuccess('Alerte SOS envoyée au support sécurité.')
+      fetchTickets()
+    } catch (err) {
+      setError(err.response?.data?.message || "Impossible d'envoyer l'alerte SOS.")
+    } finally {
+      setSendingShakeAlert(false)
+    }
+  }, [fetchTickets])
+
+  const { shakeDetected, countdown, clearShake, confirmShake } = useShakeDetection(sendShakeDangerAlert)
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -120,6 +143,29 @@ const SecuritySupport = () => {
               <p className="text-sm text-[#a54b55]">
                 En cas de danger imminent, utilisez le bouton SOS dans l'écran de suivi de course ou de mission. Si vous n'avez pas accès au suivi, appelez les secours directement.
               </p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl bg-white p-4">
+            <h3 className="font-semibold text-[#a54b55]">Mode sécurité par secousse</h3>
+            <p className="mt-1 text-sm text-[#5f7184]">
+              Comme sur Yango: secouez fortement le téléphone 3 fois. Une fenêtre d'urgence apparaît et vous pouvez cliquer pour confirmer le danger.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={confirmShake}
+                disabled={sendingShakeAlert}
+                className="rounded-xl bg-[#a54b55] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {sendingShakeAlert ? 'Envoi SOS...' : 'Je suis en danger'}
+              </button>
+              <button
+                type="button"
+                onClick={clearShake}
+                className="rounded-xl border border-[#d8c0c0] px-4 py-2 text-sm font-semibold text-[#a54b55]"
+              >
+                Annuler alerte
+              </button>
             </div>
           </div>
         </section>
@@ -261,6 +307,30 @@ const SecuritySupport = () => {
           )}
         </section>
       </div>
+      {shakeDetected && (
+        <div className="fixed bottom-24 left-4 right-4 z-50">
+          <div className="rounded-2xl bg-[#a54b55] p-4 text-center text-white shadow-2xl">
+            <div className="text-lg font-bold">Secousse détectée</div>
+            <p className="mt-1 text-sm">Appuyez sur le bouton danger ou un SOS partira automatiquement dans {countdown}s.</p>
+            <div className="mt-3 flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={confirmShake}
+                className="rounded-xl bg-white px-4 py-2 font-bold text-[#a54b55]"
+              >
+                Confirmer danger
+              </button>
+              <button
+                type="button"
+                onClick={clearShake}
+                className="rounded-xl bg-white/20 px-4 py-2 font-semibold text-white"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
