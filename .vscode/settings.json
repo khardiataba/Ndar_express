@@ -1,3 +1,4 @@
 {
-    "antigravityAutoPilot.applyOnStartup": true
+    "antigravityAutoPilot.applyOnStartup": true,
+    "github.copilot.chat.alternateGptPrompt.enabled": true
 }

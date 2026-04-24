@@ -10,6 +10,7 @@
         "sst-dev.opencode",
         "masad-frost.replit",
         "blackboxapp.blackbox",
-        "vscjava.migrate-java-to-azure"
+        "vscjava.migrate-java-to-azure",
+        "openai.chatgpt"
     ]
 }
