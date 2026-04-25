@@ -186,7 +186,9 @@ const buildPortfolioSummary = (gallery) => {
       id: item._id,
       title: item.title || "",
       description: item.description || "",
+      mediaType: item.mediaType || (item.videoUrl ? "video" : "image"),
       imageUrl: item.imageUrl || "",
+      videoUrl: item.videoUrl || "",
       thumbnailUrl: item.thumbnailUrl || item.imageUrl || "",
       category: item.category || "work",
       tags: Array.isArray(item.tags) ? item.tags : [],
@@ -366,12 +368,6 @@ const serializeProvider = (provider, viewerCoords = null, portfolio = null) => {
   const availability = resolveAvailabilityBadge(plain.providerDetails?.availability)
   const professionLabel = getProfessionLabel(plain)
   const portfolioSummary = buildPortfolioSummary(portfolio)
-  const searchKeywords = [
-    ...collectProviderKeywords(plain),
-    ...portfolioSummary.offerings.flatMap((item) => [item.title, item.description]),
-    ...portfolioSummary.previewItems.flatMap((item) => [item.title, item.description, ...(Array.isArray(item.tags) ? item.tags : [])])
-  ].filter(Boolean)
-
   return {
     id: String(plain._id || ""),
     userId: String(plain._id || ""),
@@ -401,7 +397,6 @@ const serializeProvider = (provider, viewerCoords = null, portfolio = null) => {
     serviceAreaLabel: plain.providerDetails?.serviceArea || "Saint-Louis",
     isOpen: Boolean(plain.providerDetails?.availability),
     highlight: distanceKm != null && distanceKm <= 3,
-    searchKeywords,
     portfolio: portfolioSummary
   }
 }
@@ -607,9 +602,14 @@ router.get(
       const providers = await User.find({
         role: "technician",
         status: "verified"
-      }).sort({ firstName: 1, lastName: 1 })
+      })
+        .select("firstName lastName name role status profilePhotoUrl providerDetails")
+        .sort({ firstName: 1, lastName: 1 })
+        .lean()
       const providerIds = providers.map((provider) => provider._id)
       const galleries = await ProviderGallery.find({ provider: { $in: providerIds } })
+        .select("provider coverImage totalImages galleryItems offerings")
+        .lean()
       const galleryByProviderId = new Map(galleries.map((gallery) => [String(gallery.provider), gallery]))
 
       const filteredProviders = providers

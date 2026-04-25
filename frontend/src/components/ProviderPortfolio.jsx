@@ -38,12 +38,12 @@ const ProviderPortfolio = () => {
   const handleUploadSuccess = (updatedGallery) => {
     setGallery(updatedGallery)
     setOfferings(Array.isArray(updatedGallery?.offerings) ? updatedGallery.offerings : [])
-    setToastMessage("Photo ajoutée avec succès ! 🎉")
+    setToastMessage("Aperçu ajouté avec succès.")
     setActiveTab("view")
   }
 
   const handleDeleteItem = async (itemId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette photo ?")) return
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet aperçu ?")) return
 
     try {
       await api.delete(`/gallery/${user._id}/item/${itemId}`)
@@ -116,7 +116,7 @@ const ProviderPortfolio = () => {
               : "border-transparent text-gray-600 hover:text-gray-800"
           }`}
         >
-          GALERIE Galerie ({gallery?.totalImages || 0} photos)
+          Galerie ({gallery?.totalImages || 0} éléments)
         </button>
         <button
           onClick={() => setActiveTab("upload")}
@@ -126,7 +126,7 @@ const ProviderPortfolio = () => {
               : "border-transparent text-gray-600 hover:text-gray-800"
           }`}
         >
-          UPLOAD Ajouter des photos
+          Ajouter un aperçu
         </button>
       </div>
 
@@ -220,13 +220,17 @@ const ProviderPortfolio = () => {
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {gallery.galleryItems.map((item) => (
                   <div key={item._id} className="relative bg-gray-100 rounded-lg overflow-hidden group">
-                    <img src={item.imageUrl} alt={item.title} className="w-full h-48 object-cover" />
+                    {item.mediaType === "video" || item.videoUrl ? (
+                      <video src={item.videoUrl} className="w-full h-48 object-cover" controls playsInline />
+                    ) : (
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-48 object-cover" />
+                    )}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleDeleteItem(item._id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded transition"
                       >
-                        DELETE Supprimer
+                        Supprimer
                       </button>
                     </div>
                     <div className="absolute top-2 left-2">
@@ -254,7 +258,7 @@ const ProviderPortfolio = () => {
                 onClick={() => setActiveTab("upload")}
                 className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                UPLOAD Ajouter une photo
+                Ajouter un aperçu
               </button>
             </div>
           )}

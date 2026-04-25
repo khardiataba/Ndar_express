@@ -132,6 +132,8 @@ const normalizeCategory = (category, suggestedCategory, suggestedListing) => {
   return "menuisier"
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const Service = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -189,14 +191,35 @@ const Service = () => {
       try {
         setLoadingProviders(true)
         setProviderError(null)
-        const response = await api.get("/services/providers", {
-          params: {
-            category,
-            q: query,
-            lat: clientLocation.lat,
-            lng: clientLocation.lng
+        let response = null
+        let lastError = null
+
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          try {
+            response = await api.get("/services/providers", {
+              timeout: 90000,
+              params: {
+                category,
+                q: query,
+                lat: clientLocation.lat,
+                lng: clientLocation.lng
+              }
+            })
+            break
+          } catch (requestError) {
+            lastError = requestError
+            const isTimeout = requestError.code === "ECONNABORTED" || String(requestError.message || "").toLowerCase().includes("timeout")
+            if (attempt < 2 && isTimeout) {
+              await sleep(1200)
+              continue
+            }
+            throw requestError
           }
-        })
+        }
+
+        if (!response && lastError) {
+          throw lastError
+        }
 
         if (!active) return
 
@@ -596,11 +619,21 @@ const Service = () => {
                               <div className="grid grid-cols-3 gap-2">
                                 {provider.portfolio.previewItems.slice(0, 3).map((item) => (
                                   <div key={item.id} className="overflow-hidden rounded-[16px] border border-[#dce7f0] bg-[#edf5fb]">
-                                    <img
-                                      src={getAssetUrl(item.thumbnailUrl || item.imageUrl)}
-                                      alt={item.title || provider.name}
-                                      className="h-20 w-full object-cover"
-                                    />
+                                    {item.mediaType === "video" && item.videoUrl ? (
+                                      <video
+                                        src={getAssetUrl(item.videoUrl)}
+                                        className="h-20 w-full object-cover"
+                                        muted
+                                        playsInline
+                                        controls
+                                      />
+                                    ) : (
+                                      <img
+                                        src={getAssetUrl(item.thumbnailUrl || item.imageUrl)}
+                                        alt={item.title || provider.name}
+                                        className="h-20 w-full object-cover"
+                                      />
+                                    )}
                                     <div className="px-2 py-2">
                                       <div className="truncate text-xs font-semibold text-[#16324f]">{item.title || "Apercu"}</div>
                                       {formatPriceRange(item.pricing?.startingPrice, item.pricing?.maxPrice, item.pricing?.currency, item.pricing?.unit) && (

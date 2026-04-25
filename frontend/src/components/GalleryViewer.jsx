@@ -7,7 +7,7 @@ const GalleryViewer = ({ items = [], providerName = "Service Provider" }) => {
   if (!items || items.length === 0) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <p className="text-gray-500">Aucune photo disponible pour le moment</p>
+        <p className="text-gray-500">Aucun aperçu disponible pour le moment</p>
       </div>
     )
   }
@@ -69,7 +69,13 @@ const GalleryViewer = ({ items = [], providerName = "Service Provider" }) => {
               </div>
             </div>
           ) : (
-            <img src={currentItem.imageUrl} alt={currentItem.title} className="w-full h-full object-cover" />
+            <>
+              {(currentItem.mediaType === "video" || currentItem.videoUrl) ? (
+                <video src={currentItem.videoUrl} className="w-full h-full object-cover" controls playsInline />
+              ) : (
+                <img src={currentItem.imageUrl} alt={currentItem.title} className="w-full h-full object-cover" />
+              )}
+            </>
           )}
 
           {/* Navigation Buttons */}
@@ -156,11 +162,15 @@ const GalleryViewer = ({ items = [], providerName = "Service Provider" }) => {
                   selectedIndex === idx ? "border-blue-600" : "border-gray-300 hover:border-gray-400"
                 }`}
               >
-                <img
-                  src={item.thumbnailUrl || item.imageUrl}
-                  alt={`Thumbnail ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                {(item.mediaType === "video" || item.videoUrl) ? (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-800 text-xs font-semibold text-white">Video</div>
+                ) : (
+                  <img
+                    src={item.thumbnailUrl || item.imageUrl}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </button>
             ))}
           </div>

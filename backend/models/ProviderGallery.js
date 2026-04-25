@@ -4,9 +4,18 @@ const GalleryItemSchema = new mongoose.Schema(
   {
     title: String,
     description: String,
+    mediaType: {
+      type: String,
+      enum: ["image", "video"],
+      default: "image"
+    },
     imageUrl: {
       type: String,
-      required: true
+      default: ""
+    },
+    videoUrl: {
+      type: String,
+      default: ""
     },
     thumbnailUrl: String,
     category: {

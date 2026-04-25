@@ -50,11 +50,11 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime"]
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true)
     } else {
-      cb(new Error("Invalid file type. Only images are allowed."))
+      cb(new Error("Invalid file type. Only images and videos are allowed."))
     }
   }
 })
@@ -77,20 +77,31 @@ router.get("/provider/:providerId", async (req, res) => {
 })
 
 // Add image to gallery
-router.post("/:providerId/upload", authMiddleware, upload.single("image"), async (req, res) => {
+router.post(
+  "/:providerId/upload",
+  authMiddleware,
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "media", maxCount: 1 }
+  ]),
+  async (req, res) => {
   try {
     if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 
-    if (!req.file) {
+    const uploadedMedia = req.files?.media?.[0] || req.files?.image?.[0] || null
+
+    if (!uploadedMedia) {
       return res.status(400).json({ success: false, error: "No file uploaded" })
     }
 
     const { title, description, category = "work", tags = [] } = req.body
     const pricing = sanitizePricing(req.body)
 
-    const imageUrl = `/uploads/gallery/${req.file.filename}`
+    const uploadedPath = `/uploads/gallery/${uploadedMedia.filename}`
+    const isVideo = String(uploadedMedia.mimetype || "").startsWith("video/")
+    const mediaType = isVideo ? "video" : "image"
 
     let gallery = await ProviderGallery.findOne({ provider: req.params.providerId })
 
@@ -98,7 +109,7 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
       gallery = new ProviderGallery({
         provider: req.params.providerId,
         galleryItems: [],
-        coverImage: imageUrl
+        coverImage: uploadedPath
       })
     }
 
@@ -106,8 +117,10 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
     gallery.galleryItems.push({
       title: title || "Untitled",
       description: description || "",
-      imageUrl: imageUrl,
-      thumbnailUrl: imageUrl,
+      mediaType,
+      imageUrl: isVideo ? "" : uploadedPath,
+      videoUrl: isVideo ? uploadedPath : "",
+      thumbnailUrl: isVideo ? "" : uploadedPath,
       category: category,
       tags: Array.isArray(tags) ? tags : tags.split(","),
       pricing,
@@ -117,8 +130,8 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
     gallery.totalImages = gallery.galleryItems.length
 
     // Set cover image if it's the first one
-    if (!gallery.coverImage) {
-      gallery.coverImage = imageUrl
+    if (!gallery.coverImage && !isVideo) {
+      gallery.coverImage = uploadedPath
     }
 
     gallery.updatedAt = new Date()
@@ -133,15 +146,17 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
     console.error("Error uploading image:", error)
 
     // Clean up uploaded file on error
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
+    const uploadedMedia = req.files?.media?.[0] || req.files?.image?.[0] || null
+    if (uploadedMedia?.path) {
+      fs.unlink(uploadedMedia.path, (err) => {
         if (err) console.error("Error deleting file:", err)
       })
     }
 
     res.status(500).json({ success: false, error: error.message })
   }
-})
+}
+)
 
 // Upload before-after images
 router.post("/:providerId/upload-before-after", authMiddleware, upload.array("images", 2), async (req, res) => {
@@ -173,7 +188,9 @@ router.post("/:providerId/upload-before-after", authMiddleware, upload.array("im
     gallery.galleryItems.push({
       title: title || "Before & After",
       description: description || "",
+      mediaType: "image",
       imageUrl: afterUrl,
+      videoUrl: "",
       thumbnailUrl: afterUrl,
       category: "before-after",
       beforeAfter: {
@@ -254,9 +271,14 @@ router.delete("/:providerId/item/:itemId", authMiddleware, async (req, res) => {
     }
 
     // Delete file from disk
-    const filePath = path.join(__dirname, "../uploads/gallery", item.imageUrl.split("/").pop())
-    fs.unlink(filePath, (err) => {
-      if (err) console.error("Error deleting file:", err)
+    const filesToDelete = [item.imageUrl, item.videoUrl, item.beforeAfter?.beforeUrl, item.beforeAfter?.afterUrl]
+      .filter(Boolean)
+      .map((assetPath) => path.join(__dirname, "../uploads/gallery", String(assetPath).split("/").pop()))
+
+    filesToDelete.forEach((filePath) => {
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Error deleting file:", err)
+      })
     })
 
     gallery.galleryItems.pull(req.params.itemId)

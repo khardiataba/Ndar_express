@@ -224,9 +224,16 @@ export default function ServiceDetails() {
                 messages.map((msg) => {
                   const senderId = typeof msg.senderId === "object" ? msg.senderId?._id : msg.senderId
                   const mine = String(senderId || "") === String(user?._id || "")
+                  const senderName =
+                    (typeof msg.senderId === "object"
+                      ? (msg.senderId?.name || `${msg.senderId?.firstName || ""} ${msg.senderId?.lastName || ""}`.trim())
+                      : "") || (mine ? "Vous" : "Interlocuteur")
                   return (
                     <div key={msg._id || `${msg.createdAt}-${senderId}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-xs px-4 py-2 rounded-[20px] ${mine ? "bg-[#1260a1] text-white rounded-br-none" : "bg-white text-[#16324f] rounded-bl-none border border-[#e6dccf]"}`}>
+                        <p className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${mine ? "text-white/80" : "text-[#5a8fd1]"}`}>
+                          {senderName}
+                        </p>
                         <p className="text-sm">{msg.content}</p>
                         <p className={`text-xs mt-1 ${mine ? "text-white/70" : "text-[#70839a]"}`}>
                           {new Date(msg.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}

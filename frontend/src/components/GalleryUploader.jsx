@@ -37,14 +37,14 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
 
   const uploadSingle = async () => {
     if (!uploadedItems.length) {
-      setError("Veuillez sélectionner une image")
+      setError("Veuillez sélectionner un média")
       return
     }
 
     setIsLoading(true)
     try {
       const formData = new FormData()
-      formData.append("image", uploadedItems[0])
+      formData.append("media", uploadedItems[0])
       formData.append("title", itemDetails.title || "Sans titre")
       formData.append("description", itemDetails.description)
       formData.append("category", itemDetails.category)
@@ -133,7 +133,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="font-bold text-xl mb-4">GALERIE Ajouter des photos à votre galerie</h3>
+      <h3 className="font-bold text-xl mb-4">Ajouter un aperçu d'activité</h3>
 
       {/* Mode Selection */}
       <div className="flex gap-4 mb-6">
@@ -147,7 +147,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
               setUploadedItems([])
             }}
           />
-          <span>PHOTO Photo simple</span>
+          <span>Média (photo/vidéo)</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -159,24 +159,28 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
               setUploadedItems([])
             }}
           />
-          <span>SWAP Avant/Après</span>
+          <span>Avant/Après</span>
         </label>
       </div>
 
       {/* File Input */}
       <div className="mb-6">
         <label className="block text-sm font-semibold mb-2">
-          {uploadMode === "before-after" ? "Sélectionner 2 images" : "Sélectionner une image"}
+          {uploadMode === "before-after" ? "Sélectionner 2 images" : "Sélectionner une photo ou une vidéo"}
         </label>
         <input
           type="file"
           multiple={uploadMode === "before-after"}
-          accept="image/*"
+          accept={uploadMode === "before-after" ? "image/*" : "image/*,video/mp4,video/webm,video/quicktime"}
           onChange={handleFileChange}
           className="w-full p-2 border border-gray-300 rounded"
           disabled={isLoading}
         />
-        <p className="text-xs text-gray-500 mt-1">Format: JPG, PNG, WebP, GIF | Max 10MB</p>
+        <p className="text-xs text-gray-500 mt-1">
+          {uploadMode === "before-after"
+            ? "Format: JPG, PNG, WebP, GIF | Max 10MB"
+            : "Formats: JPG, PNG, WebP, GIF, MP4, WEBM, MOV | Max 10MB"}
+        </p>
       </div>
 
       {/* Details Form */}
@@ -315,12 +319,16 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
           <div className="flex gap-2 overflow-x-auto">
             {uploadedItems.map((file, idx) => (
               <div key={idx} className="flex-shrink-0">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`Preview ${idx + 1}`}
-                  className="h-24 w-24 object-cover rounded"
-                />
-                <p className="text-xs text-gray-600 mt-1">{uploadMode === "before-after" ? (idx === 0 ? "Avant" : "Après") : "Image"}</p>
+                {String(file.type || "").startsWith("video/") ? (
+                  <video src={URL.createObjectURL(file)} className="h-24 w-24 rounded object-cover" muted controls />
+                ) : (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Preview ${idx + 1}`}
+                    className="h-24 w-24 object-cover rounded"
+                  />
+                )}
+                <p className="text-xs text-gray-600 mt-1">{uploadMode === "before-after" ? (idx === 0 ? "Avant" : "Après") : "Aperçu"}</p>
               </div>
             ))}
           </div>
@@ -337,7 +345,7 @@ const GalleryUploader = ({ providerId, onUploadSuccess }) => {
             : "bg-blue-600 text-white hover:bg-blue-700"
         }`}
       >
-        {isLoading ? "Upload en cours..." : "GO Uploader"}
+        {isLoading ? "Envoi en cours..." : "Enregistrer l'aperçu"}
       </button>
     </div>
   )
