@@ -59,6 +59,11 @@ const rideSchema = new mongoose.Schema({
   driverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   pickup: { type: locationSchema, required: true },
   destination: { type: locationSchema, required: true },
+  currentDriverLocation: { type: locationSchema, default: null },
+  routeGeometry: {
+    type: [[Number]],
+    default: []
+  },
   status: {
     type: String,
     enum: ["pending", "accepted", "ongoing", "completed", "cancelled"],

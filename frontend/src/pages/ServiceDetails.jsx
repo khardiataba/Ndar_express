@@ -129,7 +129,9 @@ export default function ServiceDetails() {
   const technicianId = typeof service.technicianId === "object" ? service.technicianId?._id : service.technicianId
   const isClient = String(clientId || "") === String(user?._id || "")
   const isTechnician = String(technicianId || "") === String(user?._id || "")
-  const messagingOpen = ["accepted", "in_progress", "quoted"].includes(String(service.status || ""))
+  const messagingOpen =
+    ["accepted", "in_progress", "quoted"].includes(String(service.status || "")) ||
+    (String(service.status || "") === "pending" && Boolean(technicianId))
   const canUseSOS = ["accepted", "in_progress"].includes(String(service.status || ""))
 
   return (
@@ -255,7 +257,7 @@ export default function ServiceDetails() {
           </div>
         ) : (
           <div className="bg-white rounded-[30px] p-6 shadow-lg text-sm text-[#70839a]">
-            Communication active des que le devis est accepte.
+            Communication active des qu'un prestataire est lie a la demande.
           </div>
         )}
       </div>

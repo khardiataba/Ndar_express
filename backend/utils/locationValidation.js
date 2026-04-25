@@ -44,7 +44,7 @@ const validateLocation = (location, options = {}) => {
     return { valid: false, errors }
   }
 
-  if (!location.lat || !location.lng) {
+  if (location.lat == null || location.lng == null) {
     errors.push("Latitude and longitude are required")
     return { valid: false, errors }
   }

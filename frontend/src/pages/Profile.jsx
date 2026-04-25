@@ -2,9 +2,8 @@ import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../context/ToastContext"
-import axios from "axios"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+import api, { getPublicAssetBaseURL } from "../api"
+import ProviderPortfolio from "../components/ProviderPortfolio"
 
 const Profile = () => {
   const { user, logout, updateUser } = useAuth()
@@ -62,7 +61,7 @@ const Profile = () => {
       if (user.profilePhotoUrl) {
         setImagePreview(user.profilePhotoUrl.startsWith('http') || user.profilePhotoUrl.startsWith('data:')
           ? user.profilePhotoUrl 
-          : `${API_BASE_URL.replace('/api', '')}${user.profilePhotoUrl}`)
+          : `${getPublicAssetBaseURL()}${user.profilePhotoUrl}`)
       }
     }
   }, [user])
@@ -87,7 +86,6 @@ const Profile = () => {
   const handleUpdateProfile = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem("token")
       const updateData = {
         firstName: profile.firstName,
         lastName: profile.lastName,
@@ -111,12 +109,7 @@ const Profile = () => {
         }
       }
 
-      const response = await axios.put(`${API_BASE_URL}/user/profile`, updateData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      })
+      const response = await api.put("/user/profile", updateData)
 
       if (response.data.success) {
         if (updateUser) updateUser(response.data.user)
@@ -132,10 +125,7 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem("token")
-      await axios.delete(`${API_BASE_URL}/user/account`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await api.delete("/user/account")
       showToast("Compte supprimé", "success")
       logout()
       navigate("/login")
@@ -148,7 +138,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-[#0a192f] px-4 pb-10 pt-4 sm:pt-6">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-[#fff7ec] mb-8">Mon Profil</h1>
         
         <div className="bg-[#0f2a44] p-6 rounded-2xl border border-white/10 shadow-xl">
@@ -202,6 +192,18 @@ const Profile = () => {
             </button>
           </div>
         </div>
+
+        {user?.role === "technician" && (
+          <div className="mt-8 bg-[#0f2a44] p-6 rounded-2xl border border-white/10 shadow-xl">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-[#fff7ec]">Apercus et tarifs</h2>
+              <p className="mt-1 text-sm text-[#d7e6f5]">
+                Mettez a jour vos realisations, vos apercus et vos tarifs depuis votre profil. Ces informations seront visibles par les clients pendant leurs recherches.
+              </p>
+            </div>
+            <ProviderPortfolio />
+          </div>
+        )}
 
         {/* Delete Section */}
         <div className="mt-12 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">

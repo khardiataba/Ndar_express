@@ -9,7 +9,7 @@ const { authMiddleware, requireRole, requireVerified } = require("../middleware/
 const { computeRideFare, computeStudentBusFare, normalizeStudentBusZone, rideCommission } = require("../utils/pricing")
 const { createNotification } = require("../services/notificationService")
 const { getPaginationParams, buildPaginatedResponse } = require("../utils/pagination")
-const { validateLocationPair } = require("../utils/locationValidation")
+const { validateLocation, validateLocationPair } = require("../utils/locationValidation")
 
 const router = express.Router()
 const objectIdRegex = /^[0-9a-fA-F]{24}$/
@@ -64,6 +64,20 @@ const normalizeLocation = (location) => {
     lat: location.lat ?? null,
     lng: location.lng ?? null
   }
+}
+
+const normalizeRouteGeometry = (geometry) => {
+  if (!Array.isArray(geometry)) return []
+
+  return geometry
+    .map((point) => {
+      if (!Array.isArray(point) || point.length < 2) return null
+      const lat = Number(point[0])
+      const lng = Number(point[1])
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+      return [lat, lng]
+    })
+    .filter(Boolean)
 }
 
 const generateSafetyCode = () => crypto.randomInt(1000, 10000).toString()
@@ -173,7 +187,7 @@ const maybeSuspendUser = async (userId, reason) => {
 // Créer une nouvelle réservation (client)
 router.post("/", authMiddleware, requireVerified, async (req, res) => {
   try {
-    const { pickup, destination, price, vehicleType, paymentMethod, distanceKm, durationMin, rideMode, busZone, busOptions } = req.body
+    const { pickup, destination, price, vehicleType, paymentMethod, distanceKm, durationMin, routeGeometry, rideMode, busZone, busOptions } = req.body
     if (!pickup || !destination || !price) {
       return res.status(400).json({ message: "pickup, destination et price requis" })
     }
@@ -241,6 +255,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
       busZone: isStudentBus ? normalizedBusZone : "",
       busOptions: isStudentBus ? safeBusOptions : undefined,
       paymentMethod: paymentMethod || "Cash",
+      routeGeometry: normalizeRouteGeometry(routeGeometry),
       safetyCode,
       status: "pending"
     })
@@ -383,6 +398,60 @@ router.get("/:id", authMiddleware, requireVerified, validateRideId, async (req, 
 })
 
 // Accepter une course (chauffeur)
+router.patch(
+  "/:id/driver-location",
+  authMiddleware,
+  requireVerified,
+  validateRideId,
+  requireRole("driver"),
+  async (req, res) => {
+    try {
+      const ride = await Ride.findById(req.params.id)
+      if (!ride) {
+        return res.status(404).json({ message: "Course non trouvée" })
+      }
+
+      if (String(ride.driverId || "") !== String(req.user._id || "")) {
+        return res.status(403).json({ message: "Cette course ne vous est pas attribuée" })
+      }
+
+      const locationInput = req.body?.location || req.body || {}
+      const locationValidation = validateLocation(
+        {
+          name: locationInput.name || "Position chauffeur",
+          address: locationInput.address || locationInput.name || "Position chauffeur",
+          lat: locationInput.lat,
+          lng: locationInput.lng
+        },
+        { checkServiceArea: true }
+      )
+
+      if (!locationValidation.valid) {
+        return res.status(400).json({ message: "Position chauffeur invalide", errors: locationValidation.errors })
+      }
+
+      ride.currentDriverLocation = locationValidation.location
+      await ride.save()
+
+      const payload = {
+        rideId: ride._id,
+        location: ride.currentDriverLocation,
+        source: String(req.body?.source || "device").slice(0, 20),
+        timestamp: new Date()
+      }
+
+      socketManager.notifyRideParticipants(ride._id, "driver:location-update", payload)
+      return res.json({
+        message: "Position chauffeur mise a jour",
+        location: ride.currentDriverLocation
+      })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ message: "Erreur serveur" })
+    }
+  }
+)
+
 router.patch(
   "/:id/accept",
   authMiddleware,

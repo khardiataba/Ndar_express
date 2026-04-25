@@ -36,7 +36,30 @@ const allowedProviderCategories = new Set([
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim())
 const isStrongPassword = (value) => /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(String(value || "").trim())
-const isValidSenegalPhone = (value) => /^(?:\+221|00221)?\s?(7[05678])\s?\d{3}\s?\d{2}\s?\d{2}$/.test(String(value || "").trim())
+const normalizeSenegalPhone = (value) => {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+
+  const keepLeadingPlus = raw.startsWith("+")
+  const compact = raw.replace(/[^\d+]/g, "")
+  const normalized = keepLeadingPlus ? `+${compact.replace(/\+/g, "")}` : compact.replace(/\+/g, "")
+
+  if (normalized.startsWith("+221")) {
+    return `+221${normalized.slice(4)}`
+  }
+
+  if (normalized.startsWith("00221")) {
+    return `+221${normalized.slice(5)}`
+  }
+
+  if (/^7\d{8}$/.test(normalized)) {
+    return `+221${normalized}`
+  }
+
+  return normalized
+}
+
+const isValidSenegalPhone = (value) => /^\+2217[05678]\d{7}$/.test(normalizeSenegalPhone(value))
 const isValidPlate = (value) => /^[A-Z]{1,3}-\d{2,4}-[A-Z]{1,3}$/.test(String(value || "").trim().toUpperCase())
 const deliveryServiceCategories = new Set(["Coursier", "Livraison / Coursier"])
 
@@ -75,7 +98,7 @@ const validateSignupPayload = ({ firstName, lastName, email, password, phone, ro
   const cleanedLastName = String(lastName || "").trim()
   const cleanedEmail = String(email || "").trim()
   const cleanedPassword = String(password || "").trim()
-  const cleanedPhone = String(phone || "").trim()
+  const cleanedPhone = normalizeSenegalPhone(phone)
   const normalizedProviderDetails = sanitizeProviderDetails(providerDetails)
 
   if (!cleanedFirstName || !cleanedLastName) {

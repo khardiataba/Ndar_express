@@ -75,7 +75,30 @@ const documentLabels = {
   registrationCard: "Carte grise"
 }
 
-const isValidPhone = (value) => /^(?:\+221|00221)?\s?(7[05678])\s?\d{3}\s?\d{2}\s?\d{2}$/.test(value.trim())
+const normalizePhoneInput = (value) => {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+
+  const keepLeadingPlus = raw.startsWith("+")
+  const compact = raw.replace(/[^\d+]/g, "")
+  const normalized = keepLeadingPlus ? `+${compact.replace(/\+/g, "")}` : compact.replace(/\+/g, "")
+
+  if (normalized.startsWith("+221")) {
+    return `+221${normalized.slice(4)}`
+  }
+
+  if (normalized.startsWith("00221")) {
+    return `+221${normalized.slice(5)}`
+  }
+
+  if (/^7\d{8}$/.test(normalized)) {
+    return `+221${normalized}`
+  }
+
+  return normalized
+}
+
+const isValidPhone = (value) => /^\+2217[05678]\d{7}$/.test(normalizePhoneInput(value))
 const isValidPlate = (value) => /^[A-Z]{1,3}-\d{2,4}-[A-Z]{1,3}$/.test(value.trim().toUpperCase())
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 const isValidName = (value) => value.trim().length >= 2 && /^[a-zA-ZÀ-ÿ\s'-]+$/.test(value.trim())
@@ -271,7 +294,7 @@ const Signup = () => {
         lastName: draft.lastName,
         email: email.trim(),
         password: password.trim(),
-        phone: phone.trim(),
+        phone: normalizePhoneInput(phone),
         role: mappedRole,
         providerDetails: {
           ...providerDetails,

@@ -484,12 +484,6 @@ const Ride = () => {
                     )}
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-[#dce7f0] bg-[#eef7ff] px-3 py-3 text-xs text-[#315472]">
-                    <div className="font-bold uppercase tracking-[0.14em] text-[#1260a1]">Recrutement chauffeurs bus</div>
-                    <div className="mt-2">
-                      Pour le transport scolaire, vous pouvez ajouter vos propres bus ou recruter des chauffeurs verifies avec permis de transport en commun (permis D) et dossier valide.
-                    </div>
-                  </div>
                 </div>
               )}
 

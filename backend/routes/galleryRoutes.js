@@ -7,6 +7,9 @@ const fs = require("fs")
 
 const router = express.Router()
 
+const isAuthorizedProvider = (req, providerId) =>
+  String(req.user?._id || req.user?.id || "") === String(providerId || "") || req.user?.role === "admin"
+
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
@@ -76,7 +79,7 @@ router.get("/provider/:providerId", async (req, res) => {
 // Add image to gallery
 router.post("/:providerId/upload", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+    if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 
@@ -143,7 +146,7 @@ router.post("/:providerId/upload", authMiddleware, upload.single("image"), async
 // Upload before-after images
 router.post("/:providerId/upload-before-after", authMiddleware, upload.array("images", 2), async (req, res) => {
   try {
-    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+    if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 
@@ -209,7 +212,7 @@ router.post("/:providerId/upload-before-after", authMiddleware, upload.array("im
 // Set cover image
 router.put("/:providerId/cover", authMiddleware, async (req, res) => {
   try {
-    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+    if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 
@@ -234,7 +237,7 @@ router.put("/:providerId/cover", authMiddleware, async (req, res) => {
 // Delete gallery item
 router.delete("/:providerId/item/:itemId", authMiddleware, async (req, res) => {
   try {
-    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+    if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 
@@ -287,7 +290,7 @@ router.get("/provider/:providerId/category/:category", async (req, res) => {
 // Save service offerings with tariffs
 router.put("/:providerId/offerings", authMiddleware, async (req, res) => {
   try {
-    if (req.user.id !== req.params.providerId && req.user.role !== "admin") {
+    if (!isAuthorizedProvider(req, req.params.providerId)) {
       return res.status(403).json({ success: false, error: "Not authorized" })
     }
 

@@ -1,110 +1,56 @@
-import { useEffect, useState, useCallback } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import { useToast } from "../context/ToastContext"
 import MapPicker from "../components/MapPicker"
 import api from "../api"
 import useSocket from "../hooks/useSocket"
 import useShakeDetection from "../hooks/useShakeDetection"
 
+const hasExactLocation = (location) =>
+  Number.isFinite(Number(location?.lat)) && Number.isFinite(Number(location?.lng))
+
+const buildGoogleMapsUrl = (location) => {
+  if (!hasExactLocation(location)) return ""
+  return `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}&travelmode=driving`
+}
 
 const DriverTracking = () => {
   const { rideId } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { updateLocation } = useSocket()
 
-  const [ride, setRide ] = useState(null)
-  const [driver, setDriver] = useState(null)
+  const [ride, setRide] = useState(null)
   const [loading, setLoading] = useState(true)
   const [locationPermission, setLocationPermission] = useState(null)
-  const [clientLocation, setClientLocation] = useState(null)
   const [driverLocation, setDriverLocation] = useState(null)
+  const [passengerLocation, setPassengerLocation] = useState(null)
+  const [navigationRoute, setNavigationRoute] = useState([])
   const [eta, setEta] = useState(null)
   const [distance, setDistance] = useState(null)
+  const [statusMessage, setStatusMessage] = useState("")
+  const [routeError, setRouteError] = useState(null)
+  const lastSharedLocationRef = useRef(null)
 
   const sendEmergencyAlert = useCallback(async () => {
     try {
-      const loc = await new Promise((resolve) => {
-        if (!navigator.geolocation) return resolve(null)
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              name: "Position SOS",
-              address: "Urgence detectee"
-            })
-          },
-          () => resolve(null),
-          { timeout: 5000 }
-        )
-      })
-
       await api.post(`/rides/${rideId}/safety-report`, {
         type: "sos_shake",
         message: "SOS chauffeur detecte apres secousses anormales",
-        location: loc
+        location: driverLocation || {
+          name: "Position chauffeur",
+          address: "Position en cours de partage",
+          lat: null,
+          lng: null
+        }
       })
       showToast("Alerte SOS envoyee.", "success")
     } catch (sosError) {
       showToast(sosError.response?.data?.message || "Impossible d'envoyer le SOS.", "error")
     }
-  }, [rideId, showToast])
+  }, [driverLocation, rideId, showToast])
 
-
-  const startTrackingLocation = useCallback(() => {
-    if (!navigator.geolocation) return
-
-    // Continuous location tracking
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const loc = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        }
-        setClientLocation(loc)
-      },
-      (error) => console.warn("Erreur localisation:", error),
-      { enableHighAccuracy: true, maximumAge: 10000 }
-    )
-
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [])
-
-  const requestLocationPermission = useCallback(async () => {
-    try {
-      if (!navigator.geolocation) {
-        setLocationPermission(false)
-        showToast("Géolocalisation non disponible", "error")
-        return
-      }
-
-      if (navigator.permissions?.query) {
-        const permissionStatus = await navigator.permissions.query({ name: "geolocation" })
-        if (permissionStatus.state === "granted" || permissionStatus.state === "prompt") {
-          setLocationPermission(true)
-          startTrackingLocation()
-        } else {
-          setLocationPermission(false)
-          showToast("Permission de localisation refusée", "warning")
-        }
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          setLocationPermission(true)
-          startTrackingLocation()
-        },
-        () => {
-          setLocationPermission(false)
-          showToast("Impossible d'accéder à votre position", "error")
-        }
-      )
-    } catch (error) {
-      console.error("Erreur permission localisation:", error)
-      setLocationPermission(false)
-    }
-  }, [showToast, startTrackingLocation])
+  const { shakeDetected, clearShake, countdown, confirmShake } = useShakeDetection(sendEmergencyAlert)
 
   const fetchRideData = useCallback(async () => {
     try {
@@ -112,12 +58,8 @@ const DriverTracking = () => {
       const response = await api.get(`/rides/${rideId}`)
       const rideData = response.data || null
       setRide(rideData)
-
-      if (rideData?.driver) {
-        setDriver(rideData.driver)
-      } else {
-        setDriver(null)
-      }
+      setPassengerLocation(rideData?.pickup || null)
+      setDriverLocation((current) => current || rideData?.currentDriverLocation || null)
     } catch (error) {
       console.error("Erreur récupération course:", error)
       showToast("Impossible de charger la course", "error")
@@ -126,57 +68,177 @@ const DriverTracking = () => {
     }
   }, [rideId, showToast])
 
-  // Request location permission and ride details when page mounts/ride changes
+  const shareDriverLocation = useCallback(
+    async (location) => {
+      if (!hasExactLocation(location)) return
+
+      const last = lastSharedLocationRef.current
+      const unchanged =
+        last &&
+        Math.abs(Number(last.lat) - Number(location.lat)) < 0.00005 &&
+        Math.abs(Number(last.lng) - Number(location.lng)) < 0.00005
+
+      if (unchanged) return
+
+      lastSharedLocationRef.current = location
+      setStatusMessage("Position chauffeur partagee en direct.")
+
+      updateLocation(location.lat, location.lng)
+
+      try {
+        await api.patch(`/rides/${rideId}/driver-location`, {
+          source: "device",
+          location
+        })
+      } catch (shareError) {
+        console.error("Erreur partage position chauffeur:", shareError)
+      }
+    },
+    [rideId, updateLocation]
+  )
+
   useEffect(() => {
-    requestLocationPermission()
     fetchRideData()
-  }, [requestLocationPermission, fetchRideData])
-
-  // Socket listener for driver location updates
-  useSocket()
-  
-  const { shakeDetected, clearShake, countdown, confirmShake } = useShakeDetection(sendEmergencyAlert)
+  }, [fetchRideData])
 
   useEffect(() => {
-    const handleDriverLocationUpdate = (event) => {
-      const loc = event?.detail?.location
-      if (!loc) return
+    if (!navigator.geolocation) {
+      setLocationPermission(false)
+      return
+    }
 
-      const lat = loc.lat ?? loc.latitude
-      const lng = loc.lng ?? loc.longitude
-      if (typeof lat === "number" && typeof lng === "number") {
-        setDriverLocation({ lat, lng })
+    let watchId = null
+
+    const startWatch = () => {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const nextLocation = {
+            lat: Number(position.coords.latitude),
+            lng: Number(position.coords.longitude),
+            name: "Position chauffeur",
+            address: "Position GPS verifiee"
+          }
+          setDriverLocation(nextLocation)
+          shareDriverLocation(nextLocation)
+        },
+        (error) => {
+          console.warn("Erreur localisation chauffeur:", error)
+          setStatusMessage("Localisation indisponible pour le moment.")
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      )
+    }
+
+    const requestPermission = async () => {
+      try {
+        if (navigator.permissions?.query) {
+          const permissionStatus = await navigator.permissions.query({ name: "geolocation" })
+          if (permissionStatus.state === "denied") {
+            setLocationPermission(false)
+            return
+          }
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocationPermission(true)
+            const nextLocation = {
+              lat: Number(position.coords.latitude),
+              lng: Number(position.coords.longitude),
+              name: "Position chauffeur",
+              address: "Position GPS verifiee"
+            }
+            setDriverLocation(nextLocation)
+            shareDriverLocation(nextLocation)
+            startWatch()
+          },
+          () => {
+            setLocationPermission(false)
+          },
+          { enableHighAccuracy: true, timeout: 12000 }
+        )
+      } catch (error) {
+        console.error("Erreur permission localisation:", error)
+        setLocationPermission(false)
       }
     }
 
-    window.addEventListener("driver:location-update", handleDriverLocationUpdate)
-    return () => {
-      window.removeEventListener("driver:location-update", handleDriverLocationUpdate)
-    }
-  }, [])
+    requestPermission()
 
+    return () => {
+      if (watchId != null) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [shareDriverLocation])
 
   useEffect(() => {
-    if (!ride || !clientLocation) return
+    const handlePassengerLocationUpdate = (event) => {
+      const data = event?.detail
+      const loc = data?.location
+      const lat = loc?.lat ?? loc?.latitude
+      const lng = loc?.lng ?? loc?.longitude
 
-    // Calculate ETA based on distance
-    const distance = Math.sqrt(
-      Math.pow(ride.destination.lat - clientLocation.lat, 2) +
-      Math.pow(ride.destination.lng - clientLocation.lng, 2)
-    ) * 111 // rough km conversion
+      if (typeof lat === "number" && typeof lng === "number") {
+        setPassengerLocation({
+          lat,
+          lng,
+          name: data?.address || "Position client",
+          address: data?.address || "Position client partagee"
+        })
+      }
+    }
 
-    setDistance(distance)
-    const etaMinutes = Math.ceil(distance / 1.4) // average speed
-    setEta(etaMinutes)
-  }, [ride, clientLocation])
+    window.addEventListener("passenger:location-update", handlePassengerLocationUpdate)
+    return () => window.removeEventListener("passenger:location-update", handlePassengerLocationUpdate)
+  }, [])
+
+  const navigationTarget = useMemo(() => {
+    if (!ride) return null
+    if (ride.status === "ongoing") return ride.destination
+    if (hasExactLocation(passengerLocation)) return passengerLocation
+    return ride.pickup
+  }, [passengerLocation, ride])
+
+  useEffect(() => {
+    if (!hasExactLocation(driverLocation) || !hasExactLocation(navigationTarget)) return
+
+    let cancelled = false
+
+    const calculateNavigation = async () => {
+      try {
+        setRouteError(null)
+        const response = await api.post("/rides/estimate", {
+          pickup: driverLocation,
+          destination: navigationTarget
+        })
+
+        if (cancelled) return
+
+        setNavigationRoute(Array.isArray(response.data?.geometry) ? response.data.geometry : [])
+        setDistance(Number(response.data?.distanceKm || 0))
+        setEta(Number(response.data?.durationMin || 0))
+      } catch (navigationError) {
+        if (!cancelled) {
+          console.error("Erreur calcul navigation:", navigationError)
+          setRouteError(navigationError.userMessage || "Impossible de calculer l'itineraire.")
+        }
+      }
+    }
+
+    calculateNavigation()
+    const intervalId = window.setInterval(calculateNavigation, 15000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [driverLocation, navigationTarget])
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20 pb-32">
         <div className="ndar-card rounded-2xl p-8 text-center">
-          <svg className="animate-spin h-12 w-12 mb-4 text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
           <p className="text-[#fff7ec]">Chargement du suivi...</p>
         </div>
       </div>
@@ -202,212 +264,122 @@ const DriverTracking = () => {
   return (
     <div className="min-h-screen pt-20 pb-32 px-4">
       <div className="max-w-4xl mx-auto space-y-4">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#fff7ec]">Suivi du trajet</h1>
-          <svg className="h-6 w-6 text-[#d7ae49] hover:text-[#e8c45f] cursor-pointer" onClick={() => navigate(-1)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <h1 className="text-2xl font-bold text-[#fff7ec]">Navigation chauffeur</h1>
+          <button onClick={() => navigate(-1)} className="text-[#d7ae49] font-semibold">
+            Fermer
+          </button>
         </div>
 
-        {/* Location Permission Alert */}
         {locationPermission === false && (
-          <div className="ndar-card rounded-2xl p-4 border border-red-500/30 bg-red-500/10">
-            <div className="flex items-start gap-3">
-              <svg className="h-8 w-8 text-yellow-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77 .833 .192 2.5 1.732 2.5z" />
-              </svg>
-              <div>
-                <p className="font-semibold text-red-400 mb-2">Localisation requise</p>
-                <p className="text-sm text-[#b0bac9] mb-3">
-                  Veuillez activer la localisation pour suivre le chauffeur et voir l'ETA
-                </p>
-                <button
-                  onClick={requestLocationPermission}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg text-sm"
-                >
-                  Activer la localisation
+          <div className="ndar-card rounded-2xl p-4 border border-red-500/30 bg-red-500/10 text-[#fff7ec]">
+            Activez la localisation pour partager votre position et calculer un itineraire exact.
+          </div>
+        )}
+
+        <div className="ndar-card rounded-2xl p-5">
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center">
+              <p className="text-xs text-[#b0bac9] mb-1">Distance</p>
+              <p className="text-xl font-bold text-[#fff7ec]">{distance ? `${distance.toFixed(1)} km` : "Calcul..."}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-[#b0bac9] mb-1">ETA</p>
+              <p className="text-xl font-bold text-[#18c56e]">{eta ? `${eta} min` : "Calcul..."}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-[#b0bac9] mb-1">Statut</p>
+              <p className="text-xl font-bold text-[#d7ae49]">{ride.status === "ongoing" ? "Vers destination" : "Vers client"}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-sm text-[#5a8fd1]">
+            {statusMessage || "Position en cours de verification."}
+          </div>
+
+          {routeError && (
+            <div className="mt-3 rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">
+              {routeError}
+            </div>
+          )}
+        </div>
+
+        <div className="ndar-card rounded-2xl p-5 overflow-hidden">
+          <h3 className="text-lg font-semibold text-[#fff7ec] mb-3">Itineraire verifie</h3>
+          <div className="h-[340px] rounded-xl overflow-hidden border border-[#d7ae49]/20">
+            <MapPicker
+              center={driverLocation || navigationTarget || ride.pickup}
+              initialPickup={hasExactLocation(passengerLocation) ? passengerLocation : ride.pickup}
+              initialDestination={ride.destination}
+              driverPosition={driverLocation}
+              routeGeometry={navigationRoute.length ? navigationRoute : ride.routeGeometry}
+              readOnly
+            />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-[#f8fbff] px-4 py-4 text-sm text-[#16324f]">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Adresse cible</div>
+              <div className="mt-2 font-semibold">
+                {navigationTarget?.address || navigationTarget?.name || "Adresse indisponible"}
+              </div>
+              <div className="mt-1 text-xs text-[#5f7184]">
+                {hasExactLocation(navigationTarget) ? "Coordonnees verifiees" : "Coordonnees a verifier"}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const url = buildGoogleMapsUrl(navigationTarget)
+                if (url) {
+                  window.open(url, "_blank", "noopener,noreferrer")
+                }
+              }}
+              disabled={!hasExactLocation(navigationTarget)}
+              className="rounded-2xl bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-4 text-sm font-bold text-white disabled:opacity-60"
+            >
+              Ouvrir la navigation
+            </button>
+          </div>
+        </div>
+
+        <div className="ndar-card rounded-2xl p-5">
+          <h3 className="text-lg font-semibold text-[#fff7ec] mb-3">Verification des points</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-[#fffdfa] px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Prise en charge</div>
+              <div className="mt-2 font-semibold text-[#16324f]">{(passengerLocation?.address || ride.pickup?.address || ride.pickup?.name || "Adresse indisponible")}</div>
+              <div className="mt-1 text-xs text-[#5f7184]">
+                {hasExactLocation(passengerLocation || ride.pickup) ? "Localisation partagee et verifiee" : "Localisation approximative"}
+              </div>
+            </div>
+            <div className="rounded-2xl bg-[#fffdfa] px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Destination</div>
+              <div className="mt-2 font-semibold text-[#16324f]">{ride.destination?.address || ride.destination?.name || "Adresse indisponible"}</div>
+              <div className="mt-1 text-xs text-[#5f7184]">
+                {hasExactLocation(ride.destination) ? "Destination verifiee" : "Destination a verifier"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {shakeDetected && (
+          <div className="fixed bottom-24 left-4 right-4 z-50">
+            <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
+              <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
+              <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
+              <div className="flex justify-center gap-3">
+                <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
+                  Envoyer maintenant
+                </button>
+                <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
+                  Annuler
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* Driver Info Card */}
-        {driver && (
-          <div className="ndar-card rounded-2xl p-5 border border-[#d7ae49]/30">
-            <div className="flex items-center gap-4 mb-4">
-              {driver.profileImage ? (
-                <img
-                  src={driver.profileImage}
-                  alt={driver.fullName}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-[#d7ae49]"
-                />
-              ) : (
-                <svg className="w-16 h-16 text-gray-400 bg-[#d7ae49]/20 rounded-full p-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              )}
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-[#fff7ec]">{driver.fullName}</h2>
-                <p className="text-sm text-[#d7ae49]">Chauffeur YOON WI</p>
-                <div className="mt-2 flex gap-2">
-                  <span className="inline-block px-3 py-1 bg-[#18c56e]/20 text-[#18c56e] text-xs font-semibold rounded-full">
-                    Verifie
-                  </span>
-                  {driver.rating && (
-                    <span className="inline-block px-3 py-1 bg-[#ffd700]/20 text-[#ffd700] text-xs font-semibold rounded-full">
-                      RATING {driver.rating.toFixed(1)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Buttons */}
-            <div className="flex gap-3 pt-4 border-t border-[#d7ae49]/20">
-              <button className="flex-1 bg-[#3a7dd6]/20 hover:bg-[#3a7dd6]/40 text-[#6ba3e5] font-semibold py-2 rounded-lg transition-colors">
-                <svg className="inline h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                Appeler
-              </button>
-              <button className="flex-1 bg-[#d7ae49]/20 hover:bg-[#d7ae49]/40 text-[#ffd700] font-semibold py-2 rounded-lg transition-colors">
-                <svg className="inline h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 4.03 9 8z" />
-                </svg>
-                Message
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tracking Status */}
-        <div className="ndar-card rounded-2xl p-5">
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="text-center">
-              <p className="text-xs text-[#b0bac9] mb-1">Distance</p>
-              <p className="text-xl font-bold text-[#fff7ec]">
-                {distance ? `${distance.toFixed(1)} km` : "..."}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-[#b0bac9] mb-1">ETA</p>
-              <p className="text-xl font-bold text-[#18c56e]">
-                {eta ? `${eta} min` : "Calcul..."}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-[#b0bac9] mb-1">Statut</p>
-              <p className="text-xl font-bold text-[#d7ae49]">
-                {ride.status === "accepted" ? "En route" : "En attente"}
-              </p>
-            </div>
-          </div>
-
-          {/* Status Timeline */}
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <svg className="h-8 w-8 text-green-500 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className="font-semibold text-[#18c56e]">Course acceptée</p>
-                <p className="text-sm text-[#b0bac9]">Le chauffeur a accepté votre demande</p>
-              </div>
-            </div>
-            {ride.status === "ongoing" && (
-              <div className="flex items-start gap-3">
-                <svg className="h-8 w-8 text-blue-500 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                <div>
-                  <p className="font-semibold text-[#3a7dd6]">Chauffeur en route</p>
-                  <p className="text-sm text-[#b0bac9]">Le chauffeur arrive vers vous</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Map Section */}
-        {clientLocation && ride && (
-          <div className="ndar-card rounded-2xl p-5 overflow-hidden">
-            <h3 className="text-lg font-semibold text-[#fff7ec] mb-3">Carte du trajet</h3>
-            <div className="h-[300px] rounded-xl overflow-hidden border border-[#d7ae49]/20">
-              <MapPicker
-                center={clientLocation}
-                readOnly
-                extraMarkers={[
-                  {
-                    id: "pickup",
-                    lat: ride.pickup.lat,
-                    lng: ride.pickup.lng,
-                    label: "Départ",
-                    icon: "map-pin",
-                    background: "#3a7dd6"
-                  },
-                  {
-                    id: "destination",
-                    lat: ride.destination.lat,
-                    lng: ride.destination.lng,
-                    label: "Arrivée",
-                    icon: "flag",
-                    background: "#18c56e"
-                  },
-                  ...(driverLocation ? [{
-                    id: "driver",
-                    lat: driverLocation.lat,
-                    lng: driverLocation.lng,
-                    label: "Chauffeur",
-                    icon: "car",
-                    background: "#d7ae49"
-                  }] : [])
-                ]}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="ndar-card rounded-2xl p-5 space-y-3">
-          <button className="w-full bg-[#3a7dd6]/20 hover:bg-[#3a7dd6]/40 text-[#6ba3e5] font-semibold py-3 rounded-lg transition-colors border border-[#3a7dd6]/30 flex items-center">
-            <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            Voir les détails de la course
-          </button>
-          <button className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold py-3 rounded-lg transition-colors border border-red-500/20 flex items-center">
-            <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Annuler la course
-          </button>
-        </div>
       </div>
-      
-      {shakeDetected && (
-        <div className="fixed bottom-24 left-4 right-4 z-50">
-          <div className="bg-[#a54b55] text-white p-4 rounded-2xl text-center shadow-2xl">
-            <div className="font-bold text-lg mb-2">Alerte secousse detectee</div>
-            <div className="text-sm mb-4">SOS automatique dans {countdown}s</div>
-            <div className="flex justify-center gap-3">
-              <button onClick={confirmShake} className="bg-white text-[#a54b55] px-5 py-2 rounded-xl font-bold">
-                Envoyer maintenant
-              </button>
-              <button onClick={clearShake} className="bg-white/20 px-5 py-2 rounded-xl font-semibold">
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }
 
-
 export default DriverTracking
-
-

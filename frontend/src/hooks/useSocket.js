@@ -3,6 +3,46 @@ import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
+const stripTrailingSlashes = (value) => (value || '').trim().replace(/\/+$/, '');
+const isLocalhostHost = (value) => value === 'localhost' || value === '127.0.0.1';
+const isLocalSocketUrl = (value) => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(String(value || '').trim());
+
+const getDefaultSocketUrl = () => {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const { protocol, hostname, origin } = window.location;
+    const isLocalhost = isLocalhostHost(hostname);
+
+    if (isLocalhost) {
+      return `${protocol}//${hostname}:5000`;
+    }
+
+    console.warn(
+      'VITE_SOCKET_URL is not set. Falling back to same-origin socket host. ' +
+      'This only works if your production host also serves Socket.io.'
+    );
+
+    return origin;
+  }
+
+  return 'http://localhost:5000';
+};
+
+const getConfiguredSocketUrl = () => {
+  const directSocketUrl = stripTrailingSlashes(import.meta.env.VITE_SOCKET_URL);
+  const baseApiUrl = stripTrailingSlashes(import.meta.env.VITE_API_URL || '');
+  const fallbackFromApi = baseApiUrl.replace(/\/api$/, '');
+  const candidate = directSocketUrl || fallbackFromApi;
+
+  if (!candidate) return '';
+
+  if (typeof window !== 'undefined' && window.location?.hostname && !isLocalhostHost(window.location.hostname) && isLocalSocketUrl(candidate)) {
+    console.warn('Ignoring local socket URL on a non-local host:', candidate);
+    return '';
+  }
+
+  return candidate;
+};
+
 const useSocket = () => {
   const { user, token } = useAuth();
   const socketRef = useRef(null);
@@ -11,12 +51,7 @@ const useSocket = () => {
 
   useEffect(() => {
     if (user && token) {
-      // Créer la connexion socket
-      const baseApiUrl = import.meta.env.VITE_API_URL || ''
-      const socketServerUrl =
-        import.meta.env.VITE_SOCKET_URL ||
-        baseApiUrl.replace(/\/api$/, '') ||
-        'http://localhost:5000'
+      const socketServerUrl = getConfiguredSocketUrl() || getDefaultSocketUrl()
 
       socketRef.current = io(socketServerUrl, {
         auth: {
@@ -65,6 +100,10 @@ const useSocket = () => {
       socket.on('driver:location-update', (data) => {
         // Mise à jour silencieuse de la position du chauffeur
         window.dispatchEvent(new CustomEvent('driver:location-update', { detail: data }));
+      });
+
+      socket.on('passenger:location-update', (data) => {
+        window.dispatchEvent(new CustomEvent('passenger:location-update', { detail: data }));
       });
 
       // Événements de chat

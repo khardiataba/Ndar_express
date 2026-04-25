@@ -3,6 +3,7 @@ const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Ride = require('../models/Ride');
+const { validateLocation } = require('../utils/locationValidation');
 
 class SocketManager {
   constructor() {
@@ -153,13 +154,20 @@ class SocketManager {
       // Only allow passenger to update their own ride
       if (String(ride.userId) !== String(socket.userId)) return;
 
+      const locationValidation = validateLocation(
+        {
+          name: address || ride.pickup?.name || 'Position actuelle',
+          address: address || ride.pickup?.address || 'Position actuelle',
+          lat: latitude,
+          lng: longitude
+        },
+        { checkServiceArea: true }
+      );
+
+      if (!locationValidation.valid) return;
+
       // Update the pickup location with current position
-      ride.pickup = {
-        name: address || ride.pickup?.name || 'Position actuelle',
-        address: address || ride.pickup?.address || 'Position actuelle',
-        lat: latitude,
-        lng: longitude
-      };
+      ride.pickup = locationValidation.location;
 
       await ride.save();
 
@@ -168,8 +176,8 @@ class SocketManager {
       if (driverSocketId) {
         this.io.to(driverSocketId).emit('passenger:location-update', {
           rideId: ride._id,
-          location: { lat: latitude, lng: longitude },
-          address: address || 'Position actuelle',
+          location: locationValidation.location,
+          address: locationValidation.location.address || 'Position actuelle',
           timestamp: new Date()
         });
       }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
 import useShakeDetection from "../hooks/useShakeDetection"
+import useSocket from "../hooks/useSocket"
 
 // Map backend statuses to tracking steps
 const statusToStage = {
@@ -21,6 +22,7 @@ const trackingSteps = [
 
 const RideTracking = () => {
   const navigate = useNavigate()
+  const { emit, isConnected } = useSocket()
   const [driverPosition, setDriverPosition] = useState({ lat: 16.026, lng: -16.503 })
   const [ride, setRide] = useState(null)
   const [error, setError] = useState(null)
@@ -71,6 +73,38 @@ const RideTracking = () => {
       cancelled = true
     }
   }, [ride, syncedRideId])
+
+  useEffect(() => {
+    const rideId = ride?._id || ride?.rideId || ride?.id
+    if (!rideId || !isConnected || !navigator.geolocation) return
+
+    let watchId = null
+
+    watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        emit("passenger:location-update", {
+          rideId,
+          latitude: Number(position.coords.latitude),
+          longitude: Number(position.coords.longitude),
+          address: ride?.pickup?.address || ride?.pickup?.name || "Position actuelle"
+        })
+      },
+      (geoError) => {
+        console.warn("Partage position passager indisponible:", geoError)
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 15000
+      }
+    )
+
+    return () => {
+      if (watchId != null) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [emit, isConnected, ride])
 
   // Listen to real-time Socket.io events
   useEffect(() => {

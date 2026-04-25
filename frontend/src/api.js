@@ -1,12 +1,39 @@
 import axios from "axios"
 
+const stripTrailingSlashes = (value) => (value || "").trim().replace(/\/+$/, "")
+const isLocalhostHost = (value) => value === "localhost" || value === "127.0.0.1"
+const isLocalApiUrl = (value) => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(String(value || "").trim())
+
+const withApiSuffix = (value) => {
+  const trimmed = stripTrailingSlashes(value)
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`
+}
+
+const getSafeConfiguredApiBase = (value) => {
+  const trimmed = stripTrailingSlashes(value)
+  if (!trimmed) return ""
+
+  if (typeof window !== "undefined" && window.location?.hostname && !isLocalhostHost(window.location.hostname) && isLocalApiUrl(trimmed)) {
+    console.warn("Ignoring local VITE_API_URL on a non-local host:", trimmed)
+    return ""
+  }
+
+  return trimmed
+}
+
 const getDefaultApiBase = () => {
   if (typeof window !== "undefined" && window.location?.hostname) {
     const { protocol, hostname, origin } = window.location
-    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1"
+    const isLocalhost = isLocalhostHost(hostname)
     if (isLocalhost) {
       return `${protocol}//${hostname}:5000/api`
     }
+
+    console.warn(
+      "VITE_API_URL is not set. Falling back to same-origin /api. " +
+        "This only works if your production host also serves the backend or rewrites /api."
+    )
+
     return `${origin}/api`
   }
 
@@ -14,8 +41,7 @@ const getDefaultApiBase = () => {
 }
 
 const normalizeBaseURL = (value) => {
-  const trimmed = (value || getDefaultApiBase()).trim().replace(/\/+$/, "")
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`
+  return withApiSuffix(getSafeConfiguredApiBase(value) || getDefaultApiBase())
 }
 
 const getStoredToken = () => {
@@ -31,6 +57,9 @@ const api = axios.create({
   baseURL: normalizeBaseURL(import.meta.env.VITE_API_URL),
   timeout: 15000
 })
+
+export const getApiBaseURL = () => normalizeBaseURL(import.meta.env.VITE_API_URL)
+export const getPublicAssetBaseURL = () => String(getApiBaseURL()).replace(/\/api\/?$/, "")
 
 api.interceptors.request.use(
   (config) => {

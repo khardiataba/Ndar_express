@@ -3,6 +3,7 @@ const crypto = require("crypto")
 const ServiceRequest = require("../models/ServiceRequest")
 const Message = require("../models/Message")
 const User = require("../models/User")
+const ProviderGallery = require("../models/ProviderGallery")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
 const { APP_COMMISSION_PERCENT, serviceCommission } = require("../utils/pricing")
 const { createCheckoutSession, getStripeConfig } = require("../utils/stripePayments")
@@ -26,6 +27,31 @@ const serviceLabelByFamily = {
   beauty: "Beauté",
   delivery: "Livraison",
   other: "Autres services"
+}
+
+const professionLabelByServiceCategory = {
+  Plomberie: "Plombier",
+  Electricite: "Electricien",
+  Menuiserie: "Menuisier",
+  Maconnerie: "Macon",
+  Peinture: "Peintre",
+  Soudure: "Soudeur",
+  Jardinage: "Jardinier",
+  "Coiffure & Beaute": "Coiffure & Beaute",
+  "Restauration / Patisserie": "Patissier",
+  "Autre service": "Prestataire",
+  Coursier: "Livreur",
+  "Livraison / Coursier": "Livreur",
+  Assistant: "Assistant",
+  Traducteur: "Traducteur",
+  Imprimeur: "Imprimeur",
+  Informatique: "Informaticien",
+  "Cours / Soutien": "Formateur",
+  Menage: "Agent d'entretien",
+  "Baby-sitting": "Baby-sitter",
+  "Aide a domicile": "Aide a domicile",
+  Evenementiel: "Evenementiel",
+  "Autre activite": "Prestataire"
 }
 
 const providerFamilyByServiceCategory = {
@@ -58,6 +84,188 @@ const getServiceFamily = (category) => serviceFamilyByCategory[String(category |
 const getProviderFamily = (user) => {
   const serviceCategory = String(user?.providerDetails?.serviceCategory || "").trim()
   return providerFamilyByServiceCategory[serviceCategory] || "other"
+}
+
+const normalizeSearchText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+
+const providerAliasGroups = {
+  artisan: ["artisan", "reparation", "depannage", "travaux"],
+  food: ["food", "restaurant", "resto", "gateau", "gateaux", "patisserie", "patissier", "traiteur"],
+  beauty: ["beaute", "beautee", "coiffure", "coiffeur", "coiffeuse", "salon", "maquillage", "tresse", "tresses"],
+  delivery: ["livreur", "livraison", "coursier", "colis", "document", "express"],
+  other: ["autre", "service", "prestataire", "specialiste"]
+}
+
+const providerAliasByCategory = {
+  Plomberie: ["plombier", "plomberie", "fuite", "robinet", "wc", "toilettes", "tuyau", "tuyaux", "evier", "lavabo"],
+  Electricite: ["electricien", "electricite", "courant", "prise", "ampoule", "panne", "installation"],
+  Menuiserie: ["menuisier", "menuiserie", "meuble", "meubles", "porte", "portes", "armoire", "dressing", "bois"],
+  Maconnerie: ["macon", "maconnerie", "mur", "murs", "carrelage", "terrasse", "beton"],
+  Peinture: ["peintre", "peinture", "facade", "murale", "deco", "décoration", "tableau", "tableaux", "art", "portrait"],
+  Soudure: ["soudeur", "soudure", "metal", "fer", "grille", "portail"],
+  Jardinage: ["jardinier", "jardinage", "pelouse", "plante", "arbre", "arbres"],
+  "Coiffure & Beaute": ["coiffure", "coiffeur", "coiffeuse", "beaute", "makeup", "maquillage", "ongles", "tresse", "tresses"],
+  "Restauration / Patisserie": ["patissier", "patisserie", "gateau", "gateaux", "repas", "restaurant", "traiteur", "dessert"],
+  "Autre service": ["service", "divers", "polyvalent"],
+  Coursier: ["livreur", "coursier", "livraison", "colis", "document", "express"],
+  "Livraison / Coursier": ["livreur", "coursier", "livraison", "colis", "document", "express"],
+  Assistant: ["assistant", "assistance", "aide", "support"],
+  Traducteur: ["traducteur", "traduction", "langue", "anglais", "francais", "arabe"],
+  Imprimeur: ["imprimeur", "impression", "photocopie", "flyer", "affiche"],
+  Informatique: ["informaticien", "informatique", "ordinateur", "pc", "laptop", "reseau", "wifi", "site", "web", "logiciel"],
+  "Cours / Soutien": ["cours", "soutien", "prof", "formateur", "formation", "etude"],
+  Menage: ["menage", "nettoyage", "proprete", "entretien"],
+  "Baby-sitting": ["baby-sitter", "baby sitting", "enfant", "garde"],
+  "Aide a domicile": ["aide a domicile", "aide", "domicile", "soin", "accompagnement"],
+  Evenementiel: ["evenement", "evenementiel", "deco", "animation", "sono", "fete"],
+  "Autre activite": ["activite", "service", "prestataire", "specialiste"]
+}
+
+const getProfessionLabel = (provider) => {
+  const category = String(provider?.providerDetails?.serviceCategory || provider?.serviceCategory || "").trim()
+  const detail = String(provider?.providerDetails?.otherServiceDetail || provider?.otherServiceDetail || "").trim()
+  const beautySpecialty = String(provider?.providerDetails?.beautySpecialty || provider?.beautySpecialty || "").trim()
+
+  if (category === "Autre service" && detail) return detail
+  if (category === "Autre activite" && detail) return detail
+  if (category === "Coiffure & Beaute" && beautySpecialty) return beautySpecialty
+
+  return professionLabelByServiceCategory[category] || category || detail || "Prestataire"
+}
+
+const collectProviderKeywords = (provider) => {
+  const serviceCategory = String(provider?.providerDetails?.serviceCategory || provider?.serviceCategory || "").trim()
+  const family = getProviderFamily(provider)
+  const familyAliases = providerAliasGroups[family] || []
+  const categoryAliases = providerAliasByCategory[serviceCategory] || []
+  const values = [
+    provider?.name,
+    provider?.firstName,
+    provider?.lastName,
+    getProfessionLabel(provider),
+    serviceCategory,
+    provider?.providerDetails?.serviceArea,
+    provider?.providerDetails?.locationLabel,
+    provider?.providerDetails?.availability,
+    provider?.providerDetails?.beautySpecialty,
+    provider?.providerDetails?.otherServiceDetail,
+    ...familyAliases,
+    ...categoryAliases
+  ]
+
+  return Array.from(
+    new Set(
+      values
+        .filter(Boolean)
+        .map((value) => String(value).trim())
+        .filter(Boolean)
+    )
+  )
+}
+
+const buildPortfolioSummary = (gallery) => {
+  if (!gallery) {
+    return {
+      coverImage: "",
+      totalImages: 0,
+      previewItems: [],
+      offerings: [],
+      priceFrom: 0,
+      priceTo: 0
+    }
+  }
+
+  const previewItems = (Array.isArray(gallery.galleryItems) ? gallery.galleryItems : [])
+    .slice(0, 3)
+    .map((item) => ({
+      id: item._id,
+      title: item.title || "",
+      description: item.description || "",
+      imageUrl: item.imageUrl || "",
+      thumbnailUrl: item.thumbnailUrl || item.imageUrl || "",
+      category: item.category || "work",
+      tags: Array.isArray(item.tags) ? item.tags : [],
+      pricing: {
+        startingPrice: Number(item?.pricing?.startingPrice || 0),
+        maxPrice: Number(item?.pricing?.maxPrice || 0),
+        currency: item?.pricing?.currency || "XOF",
+        unit: item?.pricing?.unit || "service",
+        durationMinutes: Number(item?.pricing?.durationMinutes || 0)
+      }
+    }))
+
+  const offerings = (Array.isArray(gallery.offerings) ? gallery.offerings : [])
+    .slice(0, 4)
+    .map((item, index) => ({
+      id: item._id || `offering-${index}`,
+      title: item.title || "",
+      description: item.description || "",
+      startingPrice: Number(item.startingPrice || 0),
+      maxPrice: Number(item.maxPrice || 0),
+      currency: item.currency || "XOF",
+      unit: item.unit || "service"
+    }))
+
+  const pricingNumbers = [
+    ...previewItems.flatMap((item) => [item.pricing.startingPrice, item.pricing.maxPrice]),
+    ...offerings.flatMap((item) => [item.startingPrice, item.maxPrice])
+  ]
+    .map((value) => Number(value) || 0)
+    .filter((value) => value > 0)
+
+  return {
+    coverImage: gallery.coverImage || previewItems[0]?.imageUrl || "",
+    totalImages: Number(gallery.totalImages || previewItems.length || 0),
+    previewItems,
+    offerings,
+    priceFrom: pricingNumbers.length ? Math.min(...pricingNumbers) : 0,
+    priceTo: pricingNumbers.length ? Math.max(...pricingNumbers) : 0
+  }
+}
+
+const rankProviderAgainstQuery = (provider, query, requestedFamily = null) => {
+  const normalizedQuery = normalizeSearchText(query)
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean)
+  const keywords = collectProviderKeywords(provider)
+  const searchable = normalizeSearchText(keywords.join(" "))
+  let score = 0
+
+  if (requestedFamily && provider.serviceFamily === requestedFamily) {
+    score += 25
+  }
+
+  if (!tokens.length) {
+    return score
+  }
+
+  for (const token of tokens) {
+    if (!token) continue
+    if (normalizeSearchText(provider.professionLabel).includes(token)) {
+      score += 45
+      continue
+    }
+
+    if (searchable.includes(token)) {
+      score += 20
+      continue
+    }
+
+    const fuzzyHit = keywords.some((keyword) => normalizeSearchText(keyword).includes(token) || token.includes(normalizeSearchText(keyword)))
+    if (fuzzyHit) {
+      score += 10
+    }
+  }
+
+  if (searchable.includes(normalizedQuery)) {
+    score += 35
+  }
+
+  return score
 }
 
 const areaCoordinates = {
@@ -150,16 +358,23 @@ const buildUserSummary = (user) => {
   }
 }
 
-const serializeProvider = (provider, viewerCoords = null) => {
+const serializeProvider = (provider, viewerCoords = null, portfolio = null) => {
   const plain = typeof provider?.toObject === "function" ? provider.toObject() : { ...provider }
   const coordinates = resolveProviderCoordinates(plain)
   const distanceKm = viewerCoords ? haversineDistanceKm(viewerCoords, coordinates) : null
   const family = getProviderFamily(plain)
   const availability = resolveAvailabilityBadge(plain.providerDetails?.availability)
+  const professionLabel = getProfessionLabel(plain)
+  const portfolioSummary = buildPortfolioSummary(portfolio)
+  const searchKeywords = [
+    ...collectProviderKeywords(plain),
+    ...portfolioSummary.offerings.flatMap((item) => [item.title, item.description]),
+    ...portfolioSummary.previewItems.flatMap((item) => [item.title, item.description, ...(Array.isArray(item.tags) ? item.tags : [])])
+  ].filter(Boolean)
 
   return {
-    id: plain._id,
-    userId: plain._id,
+    id: String(plain._id || ""),
+    userId: String(plain._id || ""),
     name: plain.name || `${plain.firstName || ""} ${plain.lastName || ""}`.trim(),
     firstName: plain.firstName || "",
     lastName: plain.lastName || "",
@@ -182,9 +397,12 @@ const serializeProvider = (provider, viewerCoords = null) => {
     estimatedArrivalMin: distanceKm != null ? Math.max(5, Math.round(distanceKm * 6)) : null,
     serviceFamily: family,
     serviceFamilyLabel: serviceLabelByFamily[family] || "Service",
+    professionLabel,
     serviceAreaLabel: plain.providerDetails?.serviceArea || "Saint-Louis",
     isOpen: Boolean(plain.providerDetails?.availability),
-    highlight: distanceKm != null && distanceKm <= 3
+    highlight: distanceKm != null && distanceKm <= 3,
+    searchKeywords,
+    portfolio: portfolioSummary
   }
 }
 
@@ -377,6 +595,7 @@ router.get(
   async (req, res) => {
     try {
       const category = String(req.query.category || "").trim()
+      const query = String(req.query.q || "").trim()
       const providerFamily = category ? getServiceFamily(category) : null
       const viewerCoords = normalizeCoordinates(
         {
@@ -389,15 +608,25 @@ router.get(
         role: "technician",
         status: "verified"
       }).sort({ firstName: 1, lastName: 1 })
+      const providerIds = providers.map((provider) => provider._id)
+      const galleries = await ProviderGallery.find({ provider: { $in: providerIds } })
+      const galleryByProviderId = new Map(galleries.map((gallery) => [String(gallery.provider), gallery]))
 
       const filteredProviders = providers
-        .map((provider) => serializeProvider(provider, viewerCoords))
-        .filter((provider) => {
-          if (!providerFamily) return true
-          return provider.serviceFamily === providerFamily
-        })
+        .map((provider) => serializeProvider(provider, viewerCoords, galleryByProviderId.get(String(provider._id))))
         .filter((provider) => provider.status === "verified")
         .sort((left, right) => {
+          const leftScore = rankProviderAgainstQuery(left, query, providerFamily)
+          const rightScore = rankProviderAgainstQuery(right, query, providerFamily)
+          if (rightScore !== leftScore) {
+            return rightScore - leftScore
+          }
+
+          if (providerFamily) {
+            if (left.serviceFamily === providerFamily && right.serviceFamily !== providerFamily) return -1
+            if (right.serviceFamily === providerFamily && left.serviceFamily !== providerFamily) return 1
+          }
+
           const leftDistance = left.distanceKm ?? Number.POSITIVE_INFINITY
           const rightDistance = right.distanceKm ?? Number.POSITIVE_INFINITY
           return leftDistance - rightDistance
@@ -406,7 +635,83 @@ router.get(
       return res.json({
         viewerCoords,
         providerFamily,
+        query,
         providers: filteredProviders
+      })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ message: "Erreur serveur" })
+    }
+  }
+)
+
+router.post(
+  "/discussions",
+  authMiddleware,
+  requireVerified,
+  async (req, res) => {
+    try {
+      const category = String(req.body?.category || "").trim()
+      const providerId = String(req.body?.providerId || "").trim()
+      const title = String(req.body?.title || "").trim()
+      const content = String(req.body?.content || "").trim()
+
+      if (!providerId) {
+        return res.status(400).json({ message: "Prestataire requis" })
+      }
+
+      if (!content) {
+        return res.status(400).json({ message: "Ajoutez un premier message pour lancer la discussion" })
+      }
+
+      const provider = await User.findOne({ _id: providerId, role: "technician", status: "verified" })
+      if (!provider) {
+        return res.status(404).json({ message: "Prestataire introuvable" })
+      }
+
+      const safeCategory = Object.keys(serviceFamilyByCategory).includes(category) ? category : "autres"
+      const discussionTitle = maskSensitiveContact(title).slice(0, 140) || `Discussion avec ${getProfessionLabel(provider)}`
+
+      let request = await ServiceRequest.findOne({
+        clientId: req.user._id,
+        technicianId: provider._id,
+        status: { $in: ["pending", "quoted", "accepted", "in_progress"] }
+      }).sort({ createdAt: -1 })
+
+      if (!request) {
+        request = await ServiceRequest.create({
+          clientId: req.user._id,
+          technicianId: provider._id,
+          preferredProviderId: provider._id,
+          preferredProviderName: provider.name || `${provider.firstName || ""} ${provider.lastName || ""}`.trim(),
+          preferredDistanceKm: null,
+          category: safeCategory,
+          serviceFamily: getServiceFamily(safeCategory),
+          title: discussionTitle,
+          description: "Discussion ouverte avant validation de la prestation.",
+          clientBudget: 0,
+          price: 0,
+          quotedPrice: 0,
+          appCommissionPercent: APP_COMMISSION_PERCENT,
+          appCommissionAmount: 0,
+          providerNetAmount: 0,
+          platformContributionStatus: "due",
+          status: "pending",
+          safetyCode: generateSafetyCode()
+        })
+      }
+
+      const message = await Message.create({
+        serviceId: request._id,
+        senderId: req.user._id,
+        senderRole: req.user.role,
+        content: maskSensitiveContact(content).slice(0, 1000)
+      })
+
+      return res.status(201).json({
+        message: "Discussion ouverte",
+        serviceRequest: await serializeServiceRequest(request, req.user.role, req.user._id),
+        chatMessage: await message.populate("senderId", "name firstName lastName profilePhotoUrl profilePhoto")
       })
     } catch (err) {
       console.error(err)
@@ -814,8 +1119,11 @@ router.get("/:id/messages", authMiddleware, requireVerified, async (req, res) =>
     }
 
     // Check authorization
-    if (request.clientId.toString() !== req.user._id.toString() &&
-        request.technicianId?.toString() !== req.user._id.toString()) {
+    const participantIds = [request.clientId, request.technicianId, request.preferredProviderId]
+      .filter(Boolean)
+      .map((value) => value.toString())
+
+    if (!participantIds.includes(req.user._id.toString())) {
       return res.status(403).json({ message: "Accès non autorisé" })
     }
 
@@ -843,13 +1151,16 @@ router.post("/:id/messages", authMiddleware, requireVerified, async (req, res) =
     }
 
     // Check authorization
-    if (request.clientId.toString() !== req.user._id.toString() &&
-        request.technicianId?.toString() !== req.user._id.toString()) {
+    const participantIds = [request.clientId, request.technicianId, request.preferredProviderId]
+      .filter(Boolean)
+      .map((value) => value.toString())
+
+    if (!participantIds.includes(req.user._id.toString())) {
       return res.status(403).json({ message: "Accès non autorisé" })
     }
 
-    //Only allow messages for accepted services
-    if (request.status === "pending" || request.status === "completed" || request.status === "cancelled") {
+    const canChatWhilePending = request.status === "pending" && Boolean(request.technicianId || request.preferredProviderId)
+    if ((request.status === "pending" && !canChatWhilePending) || request.status === "completed" || request.status === "cancelled") {
       return res.status(400).json({ message: "Conversation non disponible pour ce statut" })
     }
 

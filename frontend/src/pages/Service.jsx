@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
@@ -21,11 +21,11 @@ const categoryFamilyByValue = categories.reduce((acc, item) => {
 }, {})
 
 const familyLabelByValue = {
-  artisan: "Artisans proches",
-  food: "Restos et patisseries",
-  beauty: "Beaute et coiffure",
-  delivery: "Livreurs disponibles",
-  other: "Autres services"
+  artisan: "Metiers techniques",
+  food: "Cuisine et patisserie",
+  beauty: "Coiffure et beaute",
+  delivery: "Livraison",
+  other: "Tous les prestataires"
 }
 
 const defaultClientLocation = {
@@ -65,6 +65,19 @@ const getAssetUrl = (path) => {
   return `${base}${path}`
 }
 
+const getProviderImageUrl = (provider) => {
+  const source = provider?.profilePhotoUrl || provider?.portfolio?.coverImage || provider?.portfolio?.previewItems?.[0]?.thumbnailUrl || provider?.portfolio?.previewItems?.[0]?.imageUrl || ""
+  return source ? getAssetUrl(source) : ""
+}
+
+const formatPriceRange = (startingPrice, maxPrice, currency = "XOF", unit = "service") => {
+  const start = Number(startingPrice || 0)
+  const end = Number(maxPrice || 0)
+  if (!start && !end) return null
+  if (end > start) return `${start.toLocaleString()} - ${end.toLocaleString()} ${currency} / ${unit}`
+  return `${Math.max(start, end).toLocaleString()} ${currency} / ${unit}`
+}
+
 const getInitials = (name) =>
   String(name || "")
     .trim()
@@ -73,6 +86,40 @@ const getInitials = (name) =>
     .map((part) => part[0] || "")
     .join("")
     .toUpperCase() || "ND"
+
+const normalizeSearchText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+
+const toProviderId = (value) => String(value || "")
+
+const providerMatchesQuery = (provider, query) => {
+  const normalizedQuery = normalizeSearchText(query)
+  if (!normalizedQuery) return true
+
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean)
+  const searchable = normalizeSearchText(
+    [
+      provider.name,
+      provider.professionLabel,
+      provider.serviceCategory,
+      provider.serviceArea,
+      provider.locationLabel,
+      provider.availabilityLabel,
+      provider.experienceYears,
+      provider.beautySpecialty,
+      provider.otherServiceDetail,
+      ...(Array.isArray(provider.searchKeywords) ? provider.searchKeywords : [])
+    ]
+      .filter(Boolean)
+      .join(" ")
+  )
+
+  return tokens.every((token) => searchable.includes(token)) || searchable.includes(normalizedQuery)
+}
 
 const normalizeCategory = (category, suggestedCategory, suggestedListing) => {
   if (suggestedListing?.category) return suggestedListing.category
@@ -110,6 +157,11 @@ const Service = () => {
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
   const [createdSafetyCode, setCreatedSafetyCode] = useState(null)
+  const [discussionMessage, setDiscussionMessage] = useState("")
+  const [discussionError, setDiscussionError] = useState(null)
+  const [openingDiscussion, setOpeningDiscussion] = useState(false)
+  const [selectedProviderMessage, setSelectedProviderMessage] = useState(null)
+  const selectedProviderPanelRef = useRef(null)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -140,6 +192,7 @@ const Service = () => {
         const response = await api.get("/services/providers", {
           params: {
             category,
+            q: query,
             lat: clientLocation.lat,
             lng: clientLocation.lng
           }
@@ -150,10 +203,10 @@ const Service = () => {
         const nextProviders = Array.isArray(response.data?.providers) ? response.data.providers : []
         setProviders(nextProviders)
         setSelectedProviderId((current) => {
-          if (current && nextProviders.some((provider) => provider.id === current)) {
+          if (current && nextProviders.some((provider) => toProviderId(provider.id) === toProviderId(current))) {
             return current
           }
-          return nextProviders[0]?.id || null
+          return toProviderId(nextProviders[0]?.id) || null
         })
       } catch (fetchError) {
         if (!active) return
@@ -172,32 +225,10 @@ const Service = () => {
     return () => {
       active = false
     }
-  }, [category, clientLocation.lat, clientLocation.lng])
+  }, [category, query, clientLocation.lat, clientLocation.lng])
 
   const filteredProviders = useMemo(() => {
-    const lowered = query.trim().toLowerCase()
-    const source = [...providers]
-
-    if (!lowered) return source
-
-    return source.filter((provider) => {
-      const target = [
-        provider.name,
-        provider.firstName,
-        provider.lastName,
-        provider.serviceCategory,
-        provider.serviceArea,
-        provider.availabilityLabel,
-        provider.experienceYears,
-        provider.beautySpecialty,
-        provider.otherServiceDetail
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-
-      return target.includes(lowered)
-    })
+    return providers.filter((provider) => providerMatchesQuery(provider, query))
   }, [providers, query])
 
   useEffect(() => {
@@ -206,12 +237,12 @@ const Service = () => {
       return
     }
 
-    if (!filteredProviders.some((provider) => provider.id === selectedProviderId)) {
-      setSelectedProviderId(filteredProviders[0].id)
+    if (!filteredProviders.some((provider) => toProviderId(provider.id) === toProviderId(selectedProviderId))) {
+      setSelectedProviderId(toProviderId(filteredProviders[0].id))
     }
   }, [filteredProviders, selectedProviderId])
 
-  const selectedProvider = filteredProviders.find((provider) => provider.id === selectedProviderId) || filteredProviders[0] || null
+  const selectedProvider = filteredProviders.find((provider) => toProviderId(provider.id) === toProviderId(selectedProviderId)) || filteredProviders[0] || null
   const selectedCategory = categories.find((item) => item.value === category)
 
   const mapMarkers = filteredProviders.map((provider) => ({
@@ -220,12 +251,48 @@ const Service = () => {
     lng: provider.coordinates?.lng,
     label: provider.name,
     emoji: "•",
-    background: provider.id === selectedProviderId ? "#0a3760" : "#165c96"
+    background: toProviderId(provider.id) === toProviderId(selectedProviderId) ? "#0a3760" : "#165c96"
   })).filter((marker) => Number.isFinite(marker.lat) && Number.isFinite(marker.lng))
 
   const handlePickProvider = (provider) => {
-    setSelectedProviderId(provider.id)
+    setSelectedProviderId(toProviderId(provider.id))
     setTitle((current) => current || (provider.name ? `Demande pour ${provider.name}` : ""))
+    setDiscussionError(null)
+    setSelectedProviderMessage(`${provider.name} a ete selectionne comme prestataire prefere.`)
+    window.setTimeout(() => {
+      selectedProviderPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 80)
+  }
+
+  const openDiscussion = async (provider = selectedProvider) => {
+    if (!provider?.id) {
+      setDiscussionError("Choisissez d'abord un prestataire.")
+      return
+    }
+
+    const firstMessage = discussionMessage.trim() || description.trim()
+    if (!firstMessage) {
+      setDiscussionError("Ajoutez un message pour lancer la discussion avec le prestataire.")
+      return
+    }
+
+    try {
+      setOpeningDiscussion(true)
+      setDiscussionError(null)
+      const response = await api.post("/services/discussions", {
+        providerId: toProviderId(provider.id),
+        category,
+        title: title.trim() || `Discussion avec ${provider.professionLabel || provider.name}`,
+        content: firstMessage
+      })
+      setDiscussionMessage("")
+      navigate(`/service/${response.data?.serviceRequest?._id}`)
+    } catch (discussionRequestError) {
+      console.error("Erreur lors de l'ouverture de la discussion:", discussionRequestError)
+      setDiscussionError(discussionRequestError.userMessage || "Impossible d'ouvrir la discussion pour le moment.")
+    } finally {
+      setOpeningDiscussion(false)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -246,7 +313,7 @@ const Service = () => {
         category,
         title: title.trim() || `Besoin ${selectedCategory?.label || category}`,
         description: description.trim(),
-        preferredProviderId: selectedProvider?.id || null,
+        preferredProviderId: toProviderId(selectedProvider?.id) || null,
         preferredProviderName: selectedProvider?.name || "",
         preferredDistanceKm: selectedProvider?.distanceKm ?? null
       })
@@ -274,10 +341,10 @@ const Service = () => {
                 Discovery mode
               </div>
               <h1 className="mt-4 font-['Sora'] text-3xl font-extrabold text-white">
-                Trouvez le service le plus proche de vous
+                Trouvez le bon prestataire selon votre besoin
               </h1>
               <p className="mt-2 text-sm text-[#eaf3fb]">
-                Une page organisee comme une vraie place de marche: categories claires, carte, et prestataire le plus proche en premier.
+                Tous les techniciens verifies sont visibles. La recherche essaie aussi de retrouver le metier le plus proche de ce que vous tapez.
               </p>
             </div>
 
@@ -295,20 +362,20 @@ const Service = () => {
         </header>
 
         <section className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-[30px] border border-[#dbe8f1] bg-[linear-gradient(180deg,#ffffff_0%,#f3f8fc_100%)] p-4 shadow-[0_12px_30px_rgba(8,35,62,0.06)]">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">1. Verifies</div>
-            <div className="mt-2 font-['Sora'] text-lg font-bold text-[#16324f]">Prestataires visibles et tries</div>
-            <p className="mt-2 text-sm text-[#5f7184]">On te montre d'abord les profils verifies les plus pertinents.</p>
+            <div className="rounded-[30px] border border-[#dbe8f1] bg-[linear-gradient(180deg,#ffffff_0%,#f3f8fc_100%)] p-4 shadow-[0_12px_30px_rgba(8,35,62,0.06)]">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">1. Verifies</div>
+            <div className="mt-2 font-['Sora'] text-lg font-bold text-[#16324f]">Tous les profils visibles</div>
+            <p className="mt-2 text-sm text-[#5f7184]">Le client voit tous les techniciens verifies et choisit selon la profession qui l'interesse.</p>
           </div>
           <div className="rounded-[30px] border border-[#dbe8f1] bg-[linear-gradient(180deg,#ffffff_0%,#f3f8fc_100%)] p-4 shadow-[0_12px_30px_rgba(8,35,62,0.06)]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">2. Proximite</div>
-            <div className="mt-2 font-['Sora'] text-lg font-bold text-[#16324f]">Le plus proche d'abord</div>
-            <p className="mt-2 text-sm text-[#5f7184]">La carte et la liste se rangent selon la distance a ta position.</p>
+            <div className="mt-2 font-['Sora'] text-lg font-bold text-[#16324f]">Recherche plus souple</div>
+            <p className="mt-2 text-sm text-[#5f7184]">Si le mot exact n'est pas affiche, on remonte quand meme les profils les plus proches du besoin saisi.</p>
           </div>
           <div className="rounded-[30px] border border-[#dbe8f1] bg-[linear-gradient(180deg,#ffffff_0%,#f3f8fc_100%)] p-4 shadow-[0_12px_30px_rgba(8,35,62,0.06)]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">3. Paiement</div>
             <div className="mt-2 font-['Sora'] text-lg font-bold text-[#16324f]">Devis du prestataire</div>
-            <p className="mt-2 text-sm text-[#5f7184]">Le client exprime son besoin, puis le prestataire propose son prix avant validation.</p>
+              <p className="mt-2 text-sm text-[#5f7184]">Le client peut aussi discuter avec un prestataire avant d'envoyer sa demande.</p>
           </div>
         </section>
 
@@ -317,7 +384,7 @@ const Service = () => {
             <div>
               <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Choisis une categorie</h2>
               <p className="mt-1 text-sm text-[#70839a]">
-                On te montre d'abord les prestataires verifies les plus proches de ta position.
+                La categorie sert de suggestion, mais la liste reste ouverte pour montrer tous les techniciens verifies.
               </p>
             </div>
             <div className="rounded-[22px] bg-[linear-gradient(180deg,#f8fbff_0%,#edf5fb_100%)] px-4 py-3 text-sm font-semibold text-[#1260a1]">
@@ -353,7 +420,7 @@ const Service = () => {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Carte des prestataires</h2>
-                  <p className="mt-1 text-sm text-[#70839a]">Les points visibles sur la carte sont tries par proximite.</p>
+                  <p className="mt-1 text-sm text-[#70839a]">Tous les prestataires verifies remontent ici, avec priorite aux profils les plus proches et les plus pertinents.</p>
                 </div>
                 <div className="rounded-full bg-[#edf5fb] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#1260a1]">
                   {loadingProviders ? "Chargement..." : `${filteredProviders.length} resultats`}
@@ -373,12 +440,12 @@ const Service = () => {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-['Sora'] text-xl font-bold text-[#16324f]">Prestataires disponibles</h2>
-                  <p className="text-sm text-[#70839a]">Le plus proche est mis en avant en premier.</p>
+                  <p className="text-sm text-[#70839a]">Tapez un metier, un besoin ou un mot-cle comme plombier, informatique, peinture, tableau d'art ou patisserie.</p>
                 </div>
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Rechercher par nom, zone, specialite..."
+                  placeholder="Ex: plombier, informaticien, peinture, gateau..."
                   className="w-full max-w-[280px] rounded-2xl border border-[#e1d8cc] bg-[linear-gradient(180deg,#fffdfa_0%,#f8f1e7_100%)] px-4 py-3 text-sm outline-none focus:border-[#1260a1]"
                 />
               </div>
@@ -393,7 +460,7 @@ const Service = () => {
                 </div>
               ) : filteredProviders.length === 0 ? (
                 <div className="rounded-[24px] bg-[#f8fbff] px-5 py-6 text-sm text-[#70839a]">
-                  Aucun prestataire ne correspond a cette categorie pour le moment.
+                  Aucun profil ne correspond exactement a votre recherche. Essayez un mot plus simple ou une profession proche.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -401,16 +468,16 @@ const Service = () => {
                     <article
                       key={provider.id}
                       className={`rounded-[28px] border p-4 shadow-sm transition-all ${
-                        provider.id === selectedProviderId
+                        toProviderId(provider.id) === toProviderId(selectedProviderId)
                           ? "border-[#1260a1] bg-[linear-gradient(180deg,#f5fbff_0%,#ebf4fb_100%)]"
                           : "border-[#e2eaf2] bg-white"
                       }`}
                     >
                       <div className="flex items-start gap-4">
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-[#edf5fb] text-2xl">
-                          {provider.profilePhotoUrl ? (
+                          {getProviderImageUrl(provider) ? (
                             <img
-                              src={getAssetUrl(provider.profilePhotoUrl)}
+                              src={getProviderImageUrl(provider)}
                               alt={provider.name}
                               className="h-full w-full object-cover"
                             />
@@ -424,7 +491,7 @@ const Service = () => {
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">
-                                #{index + 1} {provider.serviceFamilyLabel}
+                                #{index + 1} {provider.professionLabel || provider.serviceCategory || "Prestataire"}
                               </div>
                               <h3 className="mt-1 truncate font-['Sora'] text-lg font-bold text-[#16324f]">
                                 {provider.name}
@@ -463,6 +530,8 @@ const Service = () => {
                           </div>
 
                           <p className="mt-2 text-sm text-[#70839a]">
+                            {provider.professionLabel || provider.serviceCategory || "Prestataire"}
+                            {" • "}
                             {provider.locationLabel || provider.serviceAreaLabel}
                             {provider.availabilityLabel ? ` • ${provider.availabilityLabel}` : ""}
                           </p>
@@ -487,11 +556,64 @@ const Service = () => {
                                 {provider.experienceYears}
                               </span>
                             )}
+                            {(provider.professionLabel || provider.serviceCategory) && (
+                              <span className="rounded-full bg-[#fff7eb] px-3 py-2 text-[#9a7a24]">
+                                {provider.professionLabel || provider.serviceCategory}
+                              </span>
+                            )}
                           </div>
 
                           <div className="mt-3 text-sm text-[#5f7184]">
                             {provider.beautySpecialty || provider.otherServiceDetail || "Prestataire verifie"}
                           </div>
+
+                          {(provider.portfolio?.priceFrom > 0 || provider.portfolio?.priceTo > 0) && (
+                            <div className="mt-3 rounded-[18px] bg-[#eefaf2] px-4 py-3 text-sm font-semibold text-[#178b55]">
+                              Tarif indicatif: {formatPriceRange(provider.portfolio?.priceFrom, provider.portfolio?.priceTo) || "Tarif sur demande"}
+                            </div>
+                          )}
+
+                          {Array.isArray(provider.portfolio?.offerings) && provider.portfolio.offerings.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Prestations et tarifs</div>
+                              {provider.portfolio.offerings.slice(0, 2).map((offering) => (
+                                <div key={offering.id} className="rounded-[18px] border border-[#dbe8f1] bg-[#f8fbff] px-4 py-3">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="font-semibold text-[#16324f]">{offering.title}</div>
+                                    <div className="text-sm font-bold text-[#1260a1]">
+                                      {formatPriceRange(offering.startingPrice, offering.maxPrice, offering.currency, offering.unit) || "Tarif sur demande"}
+                                    </div>
+                                  </div>
+                                  {offering.description && <div className="mt-1 text-sm text-[#5f7184]">{offering.description}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {Array.isArray(provider.portfolio?.previewItems) && provider.portfolio.previewItems.length > 0 && (
+                            <div className="mt-3">
+                              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#70839a]">Apercus du prestataire</div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {provider.portfolio.previewItems.slice(0, 3).map((item) => (
+                                  <div key={item.id} className="overflow-hidden rounded-[16px] border border-[#dce7f0] bg-[#edf5fb]">
+                                    <img
+                                      src={getAssetUrl(item.thumbnailUrl || item.imageUrl)}
+                                      alt={item.title || provider.name}
+                                      className="h-20 w-full object-cover"
+                                    />
+                                    <div className="px-2 py-2">
+                                      <div className="truncate text-xs font-semibold text-[#16324f]">{item.title || "Apercu"}</div>
+                                      {formatPriceRange(item.pricing?.startingPrice, item.pricing?.maxPrice, item.pricing?.currency, item.pricing?.unit) && (
+                                        <div className="mt-1 truncate text-[10px] text-[#178b55]">
+                                          {formatPriceRange(item.pricing?.startingPrice, item.pricing?.maxPrice, item.pricing?.currency, item.pricing?.unit)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -499,16 +621,27 @@ const Service = () => {
                         <button
                           type="button"
                           onClick={() => handlePickProvider(provider)}
-                          className="rounded-[22px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-3 text-sm font-bold text-white"
+                          className={`rounded-[22px] px-4 py-3 text-sm font-bold ${
+                            toProviderId(provider.id) === toProviderId(selectedProviderId)
+                              ? "bg-[#178b55] text-white"
+                              : "bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] text-white"
+                          }`}
                         >
-                          Choisir ce prestataire
+                          {toProviderId(provider.id) === toProviderId(selectedProviderId) ? "Prestataire selectionne" : "Choisir ce prestataire"}
                         </button>
                         <button
                           type="button"
-                          onClick={() => setSelectedProviderId(provider.id)}
+                          onClick={() => setSelectedProviderId(toProviderId(provider.id))}
                           className="rounded-[22px] bg-[#eadcc4] px-4 py-3 text-sm font-bold text-[#0a3760]"
                         >
                           Le garder en vue
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDiscussion(provider)}
+                          className="rounded-[22px] border border-[#0a3760] bg-white px-4 py-3 text-sm font-bold text-[#0a3760]"
+                        >
+                          Discuter
                         </button>
                       </div>
                     </article>
@@ -520,21 +653,22 @@ const Service = () => {
 
           <aside className="space-y-4">
             <section className="ndar-card rounded-[36px] p-5">
-              <div className="mb-4">
+                <div className="mb-4">
                 <div className="ndar-chip">Demande rapide</div>
                 <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Envoyer une demande au plus proche</h2>
                 <p className="mt-1 text-sm text-[#70839a]">
-                  On garde la demande dans la bonne categorie et on la priorise vers le prestataire selectionne.
+                  La categorie sert de repere. Vous pouvez aussi ouvrir une discussion avec le prestataire avant de confirmer votre besoin.
                 </p>
               </div>
 
               {selectedProvider && (
                 <div className="mb-4 rounded-[24px] border border-[#dce7f0] bg-[linear-gradient(180deg,#f8fbff_0%,#eef5fb_100%)] px-4 py-4">
+                  <div ref={selectedProviderPanelRef} />
                   <div className="flex items-center gap-3">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-[#edf5fb]">
-                      {selectedProvider.profilePhotoUrl ? (
+                      {getProviderImageUrl(selectedProvider) ? (
                         <img
-                          src={getAssetUrl(selectedProvider.profilePhotoUrl)}
+                          src={getProviderImageUrl(selectedProvider)}
                           alt={selectedProvider.name}
                           className="h-full w-full object-cover"
                         />
@@ -547,6 +681,7 @@ const Service = () => {
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#70839a]">Prestataire choisi</div>
                       <div className="mt-1 truncate font-['Sora'] text-lg font-bold text-[#16324f]">{selectedProvider.name}</div>
+                      <div className="mt-1 text-sm text-[#70839a]">{selectedProvider.professionLabel || selectedProvider.serviceCategory || "Prestataire"}</div>
                     </div>
                   </div>
                   <div className="mt-1 text-sm text-[#5f7184]">
@@ -555,9 +690,19 @@ const Service = () => {
                     • {selectedProvider.distanceLabel || getDistanceLabel(selectedProvider.distanceKm)}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                    <span className="rounded-full bg-white px-3 py-2 text-[#1260a1]">Famille: {selectedProvider.serviceFamilyLabel}</span>
+                    <span className="rounded-full bg-white px-3 py-2 text-[#1260a1]">{selectedProvider.professionLabel || selectedProvider.serviceCategory || "Prestataire"}</span>
                     <span className="rounded-full bg-white px-3 py-2 text-[#178b55]">{selectedProvider.availabilityLabel || "Disponible"}</span>
+                    {formatPriceRange(selectedProvider.portfolio?.priceFrom, selectedProvider.portfolio?.priceTo) && (
+                      <span className="rounded-full bg-white px-3 py-2 text-[#178b55]">
+                        Des {formatPriceRange(selectedProvider.portfolio?.priceFrom, selectedProvider.portfolio?.priceTo)}
+                      </span>
+                    )}
                   </div>
+                  {selectedProviderMessage && (
+                    <div className="mt-3 rounded-[18px] bg-[#eefaf2] px-4 py-3 text-sm font-semibold text-[#178b55]">
+                      {selectedProviderMessage}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -587,7 +732,34 @@ const Service = () => {
                   Aucun budget n'est demande au client. Decrivez simplement votre besoin, puis le prestataire proposera son prix.
                 </div>
 
+                <div className="rounded-2xl border border-[#dbe8f1] bg-[#fffdfa] px-4 py-4">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#70839a]">
+                    Discussion avec le prestataire
+                  </label>
+                  <textarea
+                    value={discussionMessage}
+                    onChange={(event) => setDiscussionMessage(event.target.value)}
+                    rows={4}
+                    placeholder="Posez une question, demandez une precision ou expliquez le besoin avant validation."
+                    className="w-full rounded-2xl border border-[#e1d8cc] bg-white px-4 py-3 outline-none focus:border-[#1260a1]"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openDiscussion()}
+                      disabled={openingDiscussion || !selectedProvider}
+                      className="rounded-[22px] border border-[#1260a1] bg-white px-4 py-3 text-sm font-bold text-[#1260a1] disabled:opacity-60"
+                    >
+                      {openingDiscussion ? "Ouverture..." : "Ouvrir la discussion"}
+                    </button>
+                    <div className="self-center text-xs text-[#70839a]">
+                      La discussion s'ouvre avec le prestataire choisi, puis vous pouvez continuer dans le chat.
+                    </div>
+                  </div>
+                </div>
+
                 {error && <div className="rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">{error}</div>}
+                {discussionError && <div className="rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">{discussionError}</div>}
                 {successMessage && <div className="rounded-2xl bg-[#eefaf2] px-4 py-3 text-sm text-[#178b55]">{successMessage}</div>}
                 {createdSafetyCode && (
                   <div className="rounded-2xl border border-[#cfe3f5] bg-[#f7fbff] px-4 py-3 text-sm text-[#1260a1]">
@@ -615,10 +787,10 @@ const Service = () => {
                   1. Choisis une categorie.
                 </div>
                 <div className="rounded-[22px] bg-[#f8fbff] px-4 py-4">
-                  2. Regarde la carte et les prestataires verifies les plus proches.
+                  2. Regardez tous les prestataires verifies et filtrez selon le metier qui vous interesse.
                 </div>
                 <div className="rounded-[22px] bg-[#f8fbff] px-4 py-4">
-                  3. Selectionne celui qui te convient, puis envoie la demande.
+                  3. Discutez si besoin, puis selectionnez le prestataire et envoyez la demande.
                 </div>
               </div>
             </section>

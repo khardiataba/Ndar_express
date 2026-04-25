@@ -56,7 +56,7 @@ const DriverDashboard = () => {
       setActionMessage(null)
       const res = await api.patch(`/rides/${id}/accept`)
       // Redirect to tracking page
-      navigate(`/tracking/${id}`, { state: { ride: res.data } })
+      navigate(`/ride/${id}/tracking`, { state: { ride: res.data } })
     } catch (err) {
       setError(err.response?.data?.message || "Impossible d'accepter")
     }
