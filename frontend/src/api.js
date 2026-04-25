@@ -55,7 +55,7 @@ const getStoredToken = () => {
 
 const api = axios.create({
   baseURL: normalizeBaseURL(import.meta.env.VITE_API_URL),
-  timeout: 15000
+  timeout: 45000
 })
 
 export const getApiBaseURL = () => normalizeBaseURL(import.meta.env.VITE_API_URL)
@@ -86,7 +86,9 @@ api.interceptors.response.use(
     const requestURL = error.config?.url ? `${baseURL}${error.config.url}` : ""
     const serverMessage = error.response?.data?.message
 
-    if (error.response?.status === 404 && requestURL) {
+    if (error.code === "ECONNABORTED" || String(error.message || "").toLowerCase().includes("timeout")) {
+      error.userMessage = "Le serveur met trop de temps a repondre. Reessayez dans quelques secondes."
+    } else if (error.response?.status === 404 && requestURL) {
       error.userMessage = `Route introuvable (404): ${requestURL}`
     } else {
       error.userMessage = serverMessage || error.message || fallbackMessage

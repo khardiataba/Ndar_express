@@ -319,7 +319,8 @@ const Signup = () => {
         if (registrationCard) form.append("registrationCard", registrationCard)
 
         await api.post("/auth/upload-docs", form, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 120000
         })
       }
 
