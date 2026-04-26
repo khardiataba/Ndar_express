@@ -20,7 +20,15 @@ const areaOptions = [
   "Ndioloffene",
   "Universite / Sanar",
   "Gandon",
-  "Toute la ville de Saint-Louis"
+  "Toute la ville de Saint-Louis",
+  "Louga",
+  "Kebemer",
+  "Linguere",
+  "Richard-Toll",
+  "Dagana",
+  "Podor",
+  "Ross-Bethio",
+  "Mpal"
 ]
 
 const availabilityOptions = [

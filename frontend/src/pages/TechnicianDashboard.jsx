@@ -58,7 +58,15 @@ const areaCoordinatesByLabel = {
   Ndioloffene: { lat: 16.0312, lng: -16.5078 },
   "Universite / Sanar": { lat: 16.0567, lng: -16.4568 },
   Gandon: { lat: 16.018, lng: -16.3728 },
-  "Toute la ville de Saint-Louis": { lat: 16.0244, lng: -16.5015 }
+  "Toute la ville de Saint-Louis": { lat: 16.0244, lng: -16.5015 },
+  Louga: { lat: 15.6187, lng: -16.2244 },
+  Kebemer: { lat: 15.4058, lng: -16.5364 },
+  Linguere: { lat: 15.3863, lng: -15.1112 },
+  "Richard-Toll": { lat: 16.4625, lng: -15.7042 },
+  Dagana: { lat: 16.5167, lng: -15.5 },
+  Podor: { lat: 16.6542, lng: -14.9681 },
+  "Ross-Bethio": { lat: 16.2687, lng: -15.7935 },
+  Mpal: { lat: 16.5322, lng: -16.0047 }
 }
 
 const areaOptions = Object.keys(areaCoordinatesByLabel)
@@ -69,6 +77,7 @@ const paymentMethods = [
   { value: "Free Money", label: "Free Money" },
   { value: "Cash", label: "Cash" }
 ]
+const COMMISSION_PAYMENT_NUMBER = "781488070"
 
 const statusMetaByValue = {
   pending: { label: "A traiter", tone: "bg-[#fff8ea] text-[#9a7a24]" },
@@ -189,6 +198,27 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
         [field]: value
       }
     }))
+  }
+
+  const fillPaymentDraft = (request) => {
+    setPaymentDraftById((current) => ({
+      ...current,
+      [request._id]: {
+        paymentMethod: "Wave",
+        reference: `COMM-${String(request._id || "").slice(-6)}`,
+        amountPaid: String(Number(request.appCommissionAmount) || 0),
+        ...(current[request._id] || {})
+      }
+    }))
+  }
+
+  const copyCommissionNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(COMMISSION_PAYMENT_NUMBER)
+      setActionMessage(`Numero de paiement copie: ${COMMISSION_PAYMENT_NUMBER}`)
+    } catch {
+      setActionMessage(`Numero de paiement commission: ${COMMISSION_PAYMENT_NUMBER}`)
+    }
   }
 
   const updateSafetyDraft = (requestId, value) => {
@@ -833,6 +863,26 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
 
                       {req.platformContributionStatus !== "paid" && (req.status === "accepted" || req.status === "in_progress") && (
                           <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#f8fbff_0%,#f3f8fc_100%)] p-4">
+                          <div className="mb-3 rounded-2xl border border-[#dce7f0] bg-white px-4 py-3">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Paiement commission</div>
+                            <div className="mt-1 font-['Sora'] text-lg font-bold text-[#16324f]">{COMMISSION_PAYMENT_NUMBER}</div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={copyCommissionNumber}
+                                className="rounded-xl bg-[#edf5fb] px-3 py-2 text-xs font-bold text-[#1260a1]"
+                              >
+                                Copier le numero
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => fillPaymentDraft(req)}
+                                className="rounded-xl bg-[#fff7eb] px-3 py-2 text-xs font-bold text-[#8b6d2f]"
+                              >
+                                Pre-remplir montant
+                              </button>
+                            </div>
+                          </div>
                           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
                             <div>
                               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Mode de paiement</label>
@@ -861,6 +911,7 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
                                 value={paymentDraftById[req._id]?.amountPaid || ""}
                                 onChange={(event) => updatePaymentDraft(req._id, "amountPaid", event.target.value)}
                                 type="number"
+                                inputMode="numeric"
                                 min="0"
                                 step="1"
                                 placeholder={String(req.appCommissionAmount || 0)}

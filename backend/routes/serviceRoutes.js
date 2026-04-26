@@ -279,7 +279,15 @@ const areaCoordinates = {
   Ndioloffene: { lat: 16.0312, lng: -16.5078 },
   "Universite / Sanar": { lat: 16.0567, lng: -16.4568 },
   Gandon: { lat: 16.018, lng: -16.3728 },
-  "Toute la ville de Saint-Louis": { lat: 16.0244, lng: -16.5015 }
+  "Toute la ville de Saint-Louis": { lat: 16.0244, lng: -16.5015 },
+  Louga: { lat: 15.6187, lng: -16.2244 },
+  Kebemer: { lat: 15.4058, lng: -16.5364 },
+  Linguere: { lat: 15.3863, lng: -15.1112 },
+  "Richard-Toll": { lat: 16.4625, lng: -15.7042 },
+  Dagana: { lat: 16.5167, lng: -15.5 },
+  Podor: { lat: 16.6542, lng: -14.9681 },
+  "Ross-Bethio": { lat: 16.2687, lng: -15.7935 },
+  Mpal: { lat: 16.5322, lng: -16.0047 }
 }
 
 const familyCoordinates = {
