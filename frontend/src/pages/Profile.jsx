@@ -34,6 +34,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [imagePreview, setImagePreview] = useState("")
+  const [openUploadSignal, setOpenUploadSignal] = useState(0)
 
   useEffect(() => {
     if (user) {
@@ -195,13 +196,34 @@ const Profile = () => {
 
         {user?.role === "technician" && (
           <div className="mt-8 bg-[#0f2a44] p-6 rounded-2xl border border-white/10 shadow-xl">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-[#fff7ec]">Apercus et tarifs</h2>
-              <p className="mt-1 text-sm text-[#d7e6f5]">
-                Mettez a jour vos realisations, vos apercus et vos tarifs depuis votre profil. Ces informations seront visibles par les clients pendant leurs recherches.
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-[#fff7ec]">Apercu de mes services</h2>
+                <p className="mt-1 text-sm text-[#d7e6f5]">
+                  Ajoutez des photos ou des videos qui expliquent clairement vos services. Ces apercus seront visibles par les clients.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenUploadSignal((value) => value + 1)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#d7ae49] text-[#0a192f] hover:bg-[#e8c45f] transition"
+                title="Ajouter photo ou video"
+                aria-label="Ajouter photo ou video"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                  <path d="M4 8h3l1.3-2h7.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Zm8 9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                </svg>
+              </button>
+            </div>
+            <div className="rounded-xl bg-[#102f4b] p-4 border border-white/10">
+              <div className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#d7ae49]">Contenu public pour les clients</div>
+              <p className="text-sm text-[#d7e6f5]">
+                Vous pouvez publier des apercus visuels de vos prestations ainsi que vos tarifs pour aider les clients a choisir.
               </p>
             </div>
-            <ProviderPortfolio />
+            <div className="mt-4">
+              <ProviderPortfolio openUploadSignal={openUploadSignal} />
+            </div>
           </div>
         )}
 

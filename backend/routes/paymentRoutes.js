@@ -186,7 +186,7 @@ router.post('/service/:serviceRequestId/pay', authMiddleware, async (req, res) =
       return res.status(404).json({ message: 'Service non trouvé' });
     }
 
-    if (serviceRequest.client.toString() !== userId) {
+    if (String(serviceRequest.clientId || '') !== String(userId || '')) {
       return res.status(403).json({ message: 'Accès non autorisé' });
     }
 

@@ -87,7 +87,7 @@ export default function RideDetails() {
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>
-  if (error) return <div className="min-h-screen p-4 flex items-center justify-center text-red-500">{error}</div>
+  if (error && !ride) return <div className="min-h-screen p-4 flex items-center justify-center text-red-500">{error}</div>
   if (!ride) return <div className="min-h-screen p-4">Course non trouvee.</div>
 
   const rideStatusLabel =
@@ -122,6 +122,7 @@ export default function RideDetails() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
+        {error && <div className="rounded-2xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a54b55]">{error}</div>}
         {statusMessage && <div className="rounded-2xl bg-[#eefaf2] px-4 py-3 text-sm text-[#178b55]">{statusMessage}</div>}
         <div className="bg-white rounded-[28px] p-5 shadow-lg">
           <h3 className="text-lg font-bold text-[#16324f] mb-3">Trajet</h3>
@@ -160,7 +161,7 @@ export default function RideDetails() {
           <h3 className="text-lg font-bold text-[#16324f] mb-3">Actions</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
-              onClick={() => navigate(`/tracking/${ride._id}`)}
+              onClick={() => navigate(`/ride/${ride._id}/tracking`)}
               className="rounded-2xl bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-4 py-3 text-sm font-bold text-white"
             >
               Ouvrir suivi course

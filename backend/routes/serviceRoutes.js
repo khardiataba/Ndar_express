@@ -1224,40 +1224,20 @@ router.get("/:id", authMiddleware, requireVerified, async (req, res) => {
   try {
     const { id } = req.params
     const request = await ServiceRequest.findById(id)
-      .populate("clientId", "name firstName lastName phone email")
-      .populate("technicianId", "name firstName lastName profilePhotoUrl profilePhoto phone email rating role address providerDetails")
     
     if (!request) {
       return res.status(404).json({ message: "Service non trouvé" })
     }
 
-    // Check authorization
-    const isClient = request.clientId._id.toString() === req.user._id.toString()
-    const isProvider = request.technicianId?._id.toString() === req.user._id.toString()
+    const viewerId = String(req.user._id || "")
+    const isClient = String(request.clientId || "") === viewerId
+    const isProvider = String(request.technicianId || "") === viewerId
     
     if (!isClient && !isProvider && req.user.role !== 'admin') {
       return res.status(403).json({ message: "Accès non autorisé" })
     }
 
-    const response = {
-      _id: request._id,
-      title: request.title,
-      description: request.description,
-      category: request.category,
-      status: request.status,
-      price: request.price,
-      appCommissionAmount: request.appCommissionAmount,
-      appCommissionPercent: request.appCommissionPercent,
-      providerNetAmount: request.providerNetAmount,
-      platformContributionStatus: request.platformContributionStatus,
-      clientId: request.clientId,
-      technicianId: request.technicianId,
-      createdAt: request.createdAt,
-      updatedAt: request.updatedAt,
-      location: request.location
-    }
-
-    return res.json(response)
+    return res.json(await serializeServiceRequest(request, req.user.role, req.user._id))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })

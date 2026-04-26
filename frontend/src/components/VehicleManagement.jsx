@@ -426,7 +426,7 @@ const VehicleManagement = () => {
                     onClick={() => handleDeleteVehicle(vehicle._id)}
                     className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-semibold hover:bg-red-200 transition"
                   >
-                    DELETE Supprimer
+                    Supprimer
                   </button>
                 </div>
               </div>

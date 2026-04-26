@@ -503,6 +503,36 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
   }, [])
 
   useEffect(() => {
+    setPaymentDraftById((current) => {
+      const next = { ...current }
+      let changed = false
+
+      for (const req of myRequests) {
+        const eligible =
+          req &&
+          req._id &&
+          req.platformContributionStatus !== "paid" &&
+          (req.status === "accepted" || req.status === "in_progress")
+
+        if (!eligible) continue
+
+        const key = req._id
+        const hasExisting = Boolean(current[key]?.amountPaid || current[key]?.reference)
+        if (hasExisting) continue
+
+        next[key] = {
+          paymentMethod: "Wave",
+          reference: `COMM-${String(req._id || "").slice(-6)}`,
+          amountPaid: String(Number(req.appCommissionAmount) || 0)
+        }
+        changed = true
+      }
+
+      return changed ? next : current
+    })
+  }, [myRequests])
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search)
     const paymentStatus = params.get("payment")
     const requestId = params.get("serviceRequestId")

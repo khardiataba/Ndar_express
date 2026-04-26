@@ -1,19 +1,31 @@
-import React, { useState, useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useAuth } from "../context/AuthContext"
 import api from "../api"
 import GalleryUploader from "./GalleryUploader"
 import GalleryViewer from "./GalleryViewer"
 import Toast from "./Toast"
 
-const ProviderPortfolio = () => {
+const ProviderPortfolio = ({ defaultTab = "view", openUploadSignal = 0 }) => {
   const { user } = useAuth()
   const [gallery, setGallery] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
-  const [activeTab, setActiveTab] = useState("view") // 'view' or 'upload'
+  const [activeTab, setActiveTab] = useState(defaultTab === "upload" ? "upload" : "view") // 'view' or 'upload'
   const [offerings, setOfferings] = useState([])
   const [savingOfferings, setSavingOfferings] = useState(false)
+
+  useEffect(() => {
+    if (defaultTab === "upload") {
+      setActiveTab("upload")
+    }
+  }, [defaultTab])
+
+  useEffect(() => {
+    if (openUploadSignal > 0) {
+      setActiveTab("upload")
+    }
+  }, [openUploadSignal])
 
   useEffect(() => {
     if (!user?._id) return
