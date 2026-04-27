@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ubbi-ndar-backend.onrender.com/api/:path*"
+      "destination": "https://yoon-wi.onrender.com/api/:path*"
     },
     {
       "source": "/socket.io/:path*",
-      "destination": "https://ubbi-ndar-backend.onrender.com/socket.io/:path*"
+      "destination": "https://yoon-wi.onrender.com/socket.io/:path*"
     },
     {
       "source": "/:path*",

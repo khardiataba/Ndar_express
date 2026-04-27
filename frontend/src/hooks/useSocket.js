@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 const stripTrailingSlashes = (value) => (value || '').trim().replace(/\/+$/, '');
 const isLocalhostHost = (value) => value === 'localhost' || value === '127.0.0.1';
 const isLocalSocketUrl = (value) => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(String(value || '').trim());
+const DEPLOY_FALLBACK_BACKEND = stripTrailingSlashes(import.meta.env.VITE_FALLBACK_BACKEND_URL || 'https://yoon-wi.onrender.com');
 
 const getDefaultSocketUrl = () => {
   if (typeof window !== 'undefined' && window.location?.hostname) {
@@ -14,6 +15,14 @@ const getDefaultSocketUrl = () => {
 
     if (isLocalhost) {
       return `${protocol}//${hostname}:5000`;
+    }
+
+    if (String(hostname).toLowerCase().includes('vercel.app') && DEPLOY_FALLBACK_BACKEND) {
+      console.warn(
+        `VITE_SOCKET_URL is not set on Vercel. Falling back to ${DEPLOY_FALLBACK_BACKEND}. ` +
+        'Set VITE_SOCKET_URL in Vercel env to remove this fallback.'
+      );
+      return DEPLOY_FALLBACK_BACKEND;
     }
 
     console.warn(
