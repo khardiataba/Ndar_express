@@ -25,9 +25,13 @@ const socketManager = require("./socket/socketManager")
 const app = express()
 const server = http.createServer(app)
 
-// Initialize Socket.io
+// ================= SOCKET =================
 socketManager.initialize(server)
 
+// ================= SECURITY =================
+app.use(helmet())
+
+// ================= CORS =================
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://ndar-express-eezj.vercel.app",
   "http://localhost:3000",
@@ -35,96 +39,43 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5174"
 ]
 
-const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "")
-const buildAllowedOrigins = () =>
-  String(process.env.FRONTEND_URL || DEFAULT_ALLOWED_ORIGINS.join(","))
-    .split(",")
-    .map((origin) => normalizeOrigin(origin))
-    .filter(Boolean)
-
-const isOriginAllowed = (origin, allowedOrigins) => {
-  if (!origin) return true
-  const normalizedOrigin = normalizeOrigin(origin)
-
-  return allowedOrigins.some((allowed) => {
-    if (allowed.includes("*")) {
-      const regexPattern = `^${allowed
-        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-        .replace(/\\\*/g, ".*")}$`
-      return new RegExp(regexPattern, "i").test(normalizedOrigin)
-    }
-
-    return normalizedOrigin.toLowerCase() === allowed.toLowerCase()
-  })
-}
-
-// Security Headers
-app.use(helmet())
-
-// Rate Limiting
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
-  message: "Trop de tentatives de connexion. Réessayez plus tard.",
-  standardHeaders: true,
-  legacyHeaders: false,
-})
-
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 requests per hour
-  message: "Trop de demandes. Réessayez plus tard.",
-  standardHeaders: true,
-  legacyHeaders: false,
-})
-
-const generalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  message: "Trop de requêtes. Réessayez plus tard.",
-  standardHeaders: true,
-  legacyHeaders: false,
-})
-
-const allowedOrigins = buildAllowedOrigins()
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (isOriginAllowed(origin, allowedOrigins)) {
-      callback(null, true)
-      return
-    }
-
-    const error = new Error("Origine CORS non autorisee")
-    error.status = 403
-    callback(error)
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 204
-}
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",")
+  : DEFAULT_ALLOWED_ORIGINS
 
 app.use(
-  cors(corsOptions)
+  cors({
+    origin: allowedOrigins,
+    credentials: true
+  })
 )
-app.options(/.*/, cors(corsOptions))
-app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "100kb" }))
-app.use(express.urlencoded({ limit: process.env.URLENCODED_BODY_LIMIT || "100kb", extended: true }))
-app.use(generalLimiter)
 
-// Health Check Route
-app.get("/", (req, res) => {
-  res.json({ message: "OK YOON WI API - Saint-Louis", status: "OK", version: "1.0" })
+app.options("*", cors())
+
+// ================= BODY LIMIT (important Render 512MB) =================
+app.use(express.json({ limit: "50kb" }))
+app.use(express.urlencoded({ extended: true, limit: "50kb" }))
+
+// ================= RATE LIMIT =================
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100
 })
 
-// Exposer les fichiers uploadés (cartes d'identité / permis)
-const uploadsPath = path.join(__dirname, "uploads")
-app.use("/uploads", express.static(uploadsPath))
+app.use(generalLimiter)
 
-app.use("/api/auth/login", loginLimiter)
-app.use("/api/auth/register", authLimiter)
-app.use("/api/auth/forgot-password", authLimiter)
-app.use("/api/auth/reset-password", authLimiter)
+// ================= STATIC FILES =================
+app.use("/uploads", express.static(path.join(__dirname, "uploads")))
+
+// ================= HEALTH CHECK =================
+app.get("/", (req, res) => {
+  res.json({
+    message: "YOON WI API OK",
+    status: "running"
+  })
+})
+
+// ================= ROUTES =================
 app.use("/api/auth", authRoutes)
 app.use("/api/admin", adminRoutes)
 app.use("/api/rides", rideRoutes)
@@ -140,91 +91,72 @@ app.use("/api/gallery", galleryRoutes)
 app.use("/api/user", userRoutes)
 app.use("/api/users", userRoutes)
 
-app.use("/api", (req, res) => {
+// ================= 404 =================
+app.use((req, res) => {
   res.status(404).json({
     message: `Route API introuvable: ${req.method} ${req.originalUrl}`
   })
 })
 
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err)
+  console.error("Error:", err.message)
 
-  const status = err.status || err.statusCode || 500
-  if (err.type === "entity.too.large") {
-    return res.status(413).json({ message: "Requete trop volumineuse" })
-  }
-
-  if (err instanceof SyntaxError && "body" in err) {
-    return res.status(400).json({ message: "JSON invalide" })
-  }
-
-  if (status >= 500) {
-    console.error("Erreur serveur:", err.message)
-  } else if (process.env.NODE_ENV !== "production") {
-    console.warn("Requete refusee:", err.message)
-  }
-
-  return res.status(status).json({
-    message: status >= 500 ? "Erreur interne du serveur" : err.message
+  res.status(err.status || 500).json({
+    message: err.message || "Erreur serveur"
   })
 })
 
+// ================= DATABASE =================
 const PORT = process.env.PORT || 5000
 
 const startServer = async () => {
-  if (!process.env.MONGO_URI) {
-    console.error("MONGO_URI est manquant. Vérifiez le fichier backend/.env.")
-    process.exit(1)
-  }
-
-  if (!process.env.JWT_SECRET) {
-    console.error("JWT_SECRET est manquant. Vérifiez le fichier backend/.env.")
-    process.exit(1)
-  }
-
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI manquant")
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET manquant")
+    }
+
     mongoose.set("strictQuery", true)
-    mongoose.set("bufferCommands", false)
 
     await mongoose.connect(process.env.MONGO_URI, {
-      maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 5,
-      minPoolSize: 0,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 30000,
-      connectTimeoutMS: 10000,
-      maxIdleTimeMS: 30000,
-      autoIndex: process.env.NODE_ENV !== "production"
+      serverSelectionTimeoutMS: 10000
     })
+
     console.log("MongoDB connecté")
 
     server.listen(PORT, () => {
-      console.log(`GO Serveur lancé sur port ${PORT} avec Socket.io`)
+      console.log(`Serveur running sur port ${PORT}`)
     })
   } catch (err) {
-    console.error("Impossible de démarrer le serveur:", err.message)
+    console.error("Erreur serveur:", err.message)
     process.exit(1)
   }
 }
 
 startServer()
 
-process.on("unhandledRejection", (reason) => {
-  console.error("Promesse non geree:", reason?.message || reason)
+// ================= PROCESS SAFETY =================
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err)
 })
 
 process.on("uncaughtException", (err) => {
-  console.error("Exception non geree:", err.message)
-  process.exit(1)
+  console.error("Uncaught Exception:", err)
 })
 
+// ================= SHUTDOWN =================
 const shutdown = async (signal) => {
-  console.log(`${signal} recu, arret propre du serveur`)
+  console.log(`${signal} reçu`)
+
   server.close(async () => {
-    await mongoose.connection.close(false)
+    await mongoose.connection.close()
     process.exit(0)
   })
 }
 
 process.on("SIGTERM", () => shutdown("SIGTERM"))
 process.on("SIGINT", () => shutdown("SIGINT"))
-
