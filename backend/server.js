@@ -33,12 +33,10 @@ app.use(helmet())
 
 // ================= CORS =================
 const DEFAULT_ALLOWED_ORIGINS = [
-  "https://ndar-express-eezj.vercel.app",
+  "https://yoonwi-app.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:5174"
+  "http://localhost:5173"
 ]
-
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",")
   : DEFAULT_ALLOWED_ORIGINS
