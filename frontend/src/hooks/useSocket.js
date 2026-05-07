@@ -1,5 +1,5 @@
 // frontend/src/hooks/useSocket.js
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
@@ -151,58 +151,58 @@ const useSocket = () => {
   }, [user, token]);
 
   // Méthodes pour interagir avec le socket
-  const emit = (event, data) => {
+  const emit = useCallback((event, data) => {
     if (socketRef.current && isConnected) {
       socketRef.current.emit(event, data);
     } else {
       console.warn('Socket non connecté, impossible d\'émettre:', event);
     }
-  };
+  }, [isConnected]);
 
   // Méthodes spécifiques aux chauffeurs
-  const goOnline = (location, vehicleType) => {
+  const goOnline = useCallback((location, vehicleType) => {
     emit('driver:online', { location, vehicleType });
-  };
+  }, [emit]);
 
-  const updateLocation = (latitude, longitude, heading = null, speed = null) => {
+  const updateLocation = useCallback((latitude, longitude, heading = null, speed = null) => {
     emit('driver:location-update', {
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
       heading: heading ? parseFloat(heading) : null,
       speed: speed ? parseFloat(speed) : null
     });
-  };
+  }, [emit]);
 
-  const updateDriverStatus = (status) => {
+  const updateDriverStatus = useCallback((status) => {
     emit('driver:status-change', { status });
-  };
+  }, [emit]);
 
   // Méthodes spécifiques aux passagers
-  const requestRide = (pickupLocation, dropoffLocation, vehicleType, estimatedPrice) => {
+  const requestRide = useCallback((pickupLocation, dropoffLocation, vehicleType, estimatedPrice) => {
     emit('ride:request', {
       pickupLocation,
       dropoffLocation,
       vehicleType,
       estimatedPrice
     });
-  };
+  }, [emit]);
 
-  const acceptRide = (requestId) => {
+  const acceptRide = useCallback((requestId) => {
     emit('ride:accept', { requestId });
-  };
+  }, [emit]);
 
-  const updateRideStatus = (rideId, status, location = null) => {
+  const updateRideStatus = useCallback((rideId, status, location = null) => {
     emit('ride:status-update', { rideId, status, location });
-  };
+  }, [emit]);
 
   // Méthodes de chat
-  const sendMessage = (rideId, message, receiverId) => {
+  const sendMessage = useCallback((rideId, message, receiverId) => {
     emit('chat:message', {
       rideId,
       message: message.trim(),
       receiverId
     });
-  };
+  }, [emit]);
 
   return {
     socket: socketRef.current,

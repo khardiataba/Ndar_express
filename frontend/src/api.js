@@ -58,6 +58,14 @@ const normalizeBaseURL = (value) => {
   return withApiSuffix(getSafeConfiguredApiBase(value) || getDefaultApiBase())
 }
 
+/** Delai requete API (ms). Defaut 90s pour hebergements avec cold start (ex. Render gratuit). Surcharge: VITE_API_TIMEOUT_MS */
+const resolveApiTimeoutMs = () => {
+  const raw = Number(import.meta.env.VITE_API_TIMEOUT_MS)
+  const fallback = 90000
+  if (!Number.isFinite(raw) || raw <= 0) return fallback
+  return Math.min(Math.max(Math.round(raw), 15000), 180000)
+}
+
 const getStoredToken = () => {
   try {
     return localStorage.getItem("token")
@@ -69,7 +77,7 @@ const getStoredToken = () => {
 
 const api = axios.create({
   baseURL: normalizeBaseURL(import.meta.env.VITE_API_URL),
-  timeout: 45000
+  timeout: resolveApiTimeoutMs()
 })
 
 export const getApiBaseURL = () => normalizeBaseURL(import.meta.env.VITE_API_URL)
@@ -101,7 +109,8 @@ api.interceptors.response.use(
     const serverMessage = error.response?.data?.message
 
     if (error.code === "ECONNABORTED" || String(error.message || "").toLowerCase().includes("timeout")) {
-      error.userMessage = "Le serveur met trop de temps a repondre. Reessayez dans quelques secondes."
+      error.userMessage =
+        "Delai depasse : le serveur ne repond pas assez vite. Si vous etes sur un hebergement gratuit, le premier appel apres une pause peut prendre jusqu'a une minute (demarrage). Reessayez une fois, puis verifiez que le backend tourne et que VITE_API_URL pointe vers la bonne adresse."
     } else if (error.response?.status === 404 && requestURL) {
       error.userMessage = `Route introuvable (404): ${requestURL}`
     } else {

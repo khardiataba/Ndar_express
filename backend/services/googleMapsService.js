@@ -4,6 +4,7 @@ const axios = require('axios');
 class GoogleMapsService {
   constructor() {
     this.apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    this.mapboxToken = process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN;
     this.baseUrl = 'https://maps.googleapis.com/maps/api';
     this.osmBaseUrl = 'https://nominatim.openstreetmap.org';
   }
@@ -49,6 +50,80 @@ class GoogleMapsService {
    */
   async calculateRoute(origin, destination, options = {}) {
     try {
+      if (this.mapboxToken) {
+        const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+        const params = new URLSearchParams({
+          alternatives: 'false',
+          geometries: 'geojson',
+          overview: 'full',
+          steps: 'true',
+          language: 'fr',
+          access_token: this.mapboxToken
+        });
+
+        const response = await axios.get(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?${params}`, {
+          timeout: 12000
+        });
+        const route = response.data?.routes?.[0];
+        if (!route) {
+          throw new Error('Mapbox Directions: aucun itineraire');
+        }
+
+        return {
+          success: true,
+          provider: 'mapbox',
+          distance: {
+            text: `${Math.round((route.distance / 1000) * 10) / 10} km`,
+            value: route.distance
+          },
+          duration: {
+            text: `${Math.max(1, Math.round(route.duration / 60))} min`,
+            value: route.duration
+          },
+          geometry: Array.isArray(route.geometry?.coordinates)
+            ? route.geometry.coordinates.map(([lng, lat]) => [lat, lng])
+            : [],
+          steps: (route.legs?.[0]?.steps || []).map((step) => ({
+            instructions: step.maneuver?.instruction || '',
+            distance: { text: `${Math.round(step.distance)} m`, value: step.distance },
+            duration: { text: `${Math.max(1, Math.round(step.duration / 60))} min`, value: step.duration },
+            start_location: step.maneuver?.location
+              ? { lat: step.maneuver.location[1], lng: step.maneuver.location[0] }
+              : null,
+            end_location: null
+          }))
+        };
+      }
+
+      if (!this.hasGoogleKey()) {
+        const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+        const response = await axios.get(
+          `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false`,
+          { timeout: 12000 }
+        );
+        const route = response.data?.routes?.[0];
+        if (!route) {
+          throw new Error('OSRM: aucun itineraire');
+        }
+
+        return {
+          success: true,
+          provider: 'osrm',
+          distance: {
+            text: `${Math.round((route.distance / 1000) * 10) / 10} km`,
+            value: route.distance
+          },
+          duration: {
+            text: `${Math.max(1, Math.round(route.duration / 60))} min`,
+            value: route.duration
+          },
+          geometry: Array.isArray(route.geometry?.coordinates)
+            ? route.geometry.coordinates.map(([lng, lat]) => [lat, lng])
+            : [],
+          steps: []
+        };
+      }
+
       const params = new URLSearchParams({
         origin: `${origin.lat},${origin.lng}`,
         destination: `${destination.lat},${destination.lng}`,
@@ -512,12 +587,12 @@ class GoogleMapsService {
    * Valider qu'une adresse est dans la zone de service
    */
   isInServiceArea(lat, lng, serviceArea = null) {
-    // Zone de service par défaut (Dakar et environs)
+    // Zone de service par défaut: Saint-Louis et environs.
     const defaultBounds = {
-      north: 14.8,
-      south: 14.6,
-      east: -17.3,
-      west: -17.5
+      north: 16.1,
+      south: 16.0,
+      east: -16.4,
+      west: -16.6
     };
 
     const bounds = serviceArea || defaultBounds;
