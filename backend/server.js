@@ -7,6 +7,7 @@ const helmet = require("helmet")
 const rateLimit = require("express-rate-limit")
 require("dotenv").config({ path: path.join(__dirname, ".env") })
 
+// ================= ROUTES =================
 const authRoutes = require("./routes/authRoutes")
 const adminRoutes = require("./routes/adminRoutes")
 const rideRoutes = require("./routes/rideRoutes")
@@ -31,38 +32,46 @@ socketManager.initialize(server)
 // ================= SECURITY =================
 app.use(helmet())
 
-// ================= CORS =================
+// ================= CORS FIX =================
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://yoonwi-app.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:5174"
 ]
+
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",")
   : DEFAULT_ALLOWED_ORIGINS
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true)
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+
+      return callback(new Error("CORS non autorisé"))
+    },
     credentials: true
   })
 )
 
-app.options("*", cors())
-
-// ================= BODY LIMIT (important Render 512MB) =================
+// ================= BODY =================
 app.use(express.json({ limit: "50kb" }))
 app.use(express.urlencoded({ extended: true, limit: "50kb" }))
 
 // ================= RATE LIMIT =================
-const generalLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100
-})
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 100
+  })
+)
 
-app.use(generalLimiter)
-
-// ================= STATIC FILES =================
+// ================= STATIC =================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // ================= HEALTH CHECK =================
@@ -98,7 +107,7 @@ app.use((req, res) => {
 
 // ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
-  console.error("Error:", err.message)
+  console.error("SERVER ERROR:", err.message)
 
   res.status(err.status || 500).json({
     message: err.message || "Erreur serveur"
@@ -110,13 +119,8 @@ const PORT = process.env.PORT || 5000
 
 const startServer = async () => {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI manquant")
-    }
-
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET manquant")
-    }
+    if (!process.env.MONGO_URI) throw new Error("MONGO_URI manquant")
+    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET manquant")
 
     mongoose.set("strictQuery", true)
 
@@ -137,7 +141,7 @@ const startServer = async () => {
 
 startServer()
 
-// ================= PROCESS SAFETY =================
+// ================= SAFETY =================
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection:", err)
 })
