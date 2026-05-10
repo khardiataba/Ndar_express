@@ -201,7 +201,7 @@ class PaymentService {
    */
   async processServicePayment(serviceRequestId) {
     try {
-      const serviceRequest = await ServiceRequest.findById(serviceRequestId).populate('client provider');
+      const serviceRequest = await ServiceRequest.findById(serviceRequestId);
       if (!serviceRequest) {
         throw new Error('Demande de service non trouvée');
       }
@@ -217,9 +217,17 @@ class PaymentService {
         };
       }
 
-      const clientId = serviceRequest.client._id;
-      const providerId = serviceRequest.provider._id;
-      const amount = serviceRequest.finalPrice || serviceRequest.estimatedPrice;
+      const clientId = serviceRequest.clientId;
+      const providerId = serviceRequest.technicianId;
+      const amount = Number(serviceRequest.price || serviceRequest.quotedPrice || 0);
+
+      if (!clientId || !providerId) {
+        throw new Error('Client ou prestataire manquant');
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error('Montant de service invalide');
+      }
 
       // Calculer la commission application (10% par défaut)
       const commission = Math.round((amount * APP_COMMISSION_PERCENT) / 100);

@@ -43,13 +43,15 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",")
   : DEFAULT_ALLOWED_ORIGINS
+const normalizedAllowedOrigins = allowedOrigins.map((origin) => String(origin || "").trim().replace(/\/+$/, ""))
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true)
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = String(origin || "").trim().replace(/\/+$/, "")
+      if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
         return callback(null, true)
       }
 

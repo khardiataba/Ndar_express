@@ -101,11 +101,11 @@ const RentalDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gray-50 pb-32">
       {/* Back Button */}
-      <div className="bg-white border-b sticky top-0 z-30">
+      <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-3">
-          <button onClick={() => navigate("/rental")} className="text-blue-600 hover:text-blue-800 font-medium">
+          <button onClick={() => navigate("/rental")} className="max-w-full break-words text-left text-blue-600 hover:text-blue-800 font-medium">
             ← Retour aux locations
           </button>
         </div>
@@ -141,10 +141,10 @@ const RentalDetail = () => {
 
             {/* Info */}
             <div>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">{rental.vehicleName}</h1>
-                  <p className="text-gray-600">
+              <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h1 className="mb-2 break-words text-2xl font-bold sm:text-3xl">{rental.vehicleName}</h1>
+                  <p className="break-words text-gray-600">
                     {rental.brand} {rental.model} - {rental.year}
                   </p>
                 </div>
@@ -327,7 +327,7 @@ const RentalDetail = () => {
 
       {/* Booking Button */}
       {!showBookingForm && (
-        <div className="fixed bottom-24 left-0 right-0 px-4 py-4 bg-white border-t shadow-lg">
+        <div className="fixed bottom-[108px] left-0 right-0 z-[9997] px-4 py-3 bg-white border-t shadow-lg sm:bottom-[124px]">
           <button
             onClick={() => setShowBookingForm(true)}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-lg font-bold text-lg hover:shadow-lg transition"

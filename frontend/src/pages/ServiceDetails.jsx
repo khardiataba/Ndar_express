@@ -3,8 +3,12 @@ import { useParams, useNavigate } from "react-router-dom"
 import api from "../api"
 import { useAuth } from "../context/AuthContext"
 import useShakeDetection from "../hooks/useShakeDetection"
+import MapPicker from "../components/MapPicker"
 import RatingModal from "../components/RatingModal"
 import { ratingAPI } from "../api"
+
+const hasExactLocation = (location) =>
+  Number.isFinite(Number(location?.lat)) && Number.isFinite(Number(location?.lng))
 
 export default function ServiceDetails() {
   const { id } = useParams()
@@ -85,6 +89,49 @@ export default function ServiceDetails() {
     return () => clearInterval(timer)
   }, [loadMessages, loadService])
 
+  useEffect(() => {
+    if (!service?._id || !navigator.geolocation) return
+    if (!["accepted", "in_progress"].includes(String(service.status || ""))) return
+
+    const clientId = typeof service.clientId === "object" ? service.clientId?._id : service.clientId
+    const technicianId = typeof service.technicianId === "object" ? service.technicianId?._id : service.technicianId
+    const isClientViewer = String(clientId || "") === String(user?._id || "")
+    const isProviderViewer = String(technicianId || "") === String(user?._id || "")
+    if (!isClientViewer && !isProviderViewer) return
+
+    let lastShared = null
+    const endpoint = isProviderViewer ? `/services/${service._id}/provider-location` : `/services/${service._id}/client-location`
+
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const location = {
+          lat: Number(position.coords.latitude),
+          lng: Number(position.coords.longitude),
+          name: isProviderViewer ? "Position livreur" : "Position client",
+          address: "Position GPS verifiee"
+        }
+        if (
+          lastShared &&
+          Math.abs(lastShared.lat - location.lat) < 0.00005 &&
+          Math.abs(lastShared.lng - location.lng) < 0.00005
+        ) {
+          return
+        }
+        lastShared = location
+        try {
+          const response = await api.patch(endpoint, { location })
+          setService(response.data)
+        } catch (locationError) {
+          console.warn("Partage position service indisponible:", locationError)
+        }
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [service?._id, service?.status, user?._id])
+
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return
 
@@ -114,6 +161,9 @@ export default function ServiceDetails() {
   const canUseSOS = ["accepted", "in_progress"].includes(String(service.status || ""))
   const canRateProvider = isClient && service.status === "completed" && technicianId
   const providerName = service.technician?.name || service.assignedProvider?.name || "Prestataire"
+  const providerLocation = service.currentProviderLocation || service.technician?.coordinates || service.assignedProvider?.coordinates
+  const clientLocation = service.clientLocation
+  const canShowTracking = ["accepted", "in_progress"].includes(String(service.status || "")) && (hasExactLocation(clientLocation) || hasExactLocation(providerLocation))
 
   return (
     <div className="min-h-screen bg-[#f7f1e6] pb-24">
@@ -154,6 +204,33 @@ export default function ServiceDetails() {
             <p className="text-xs text-[#70839a] mt-3">
               Detection secousse avancee: 3 secousses fortes en moins de 4 secondes declenchent un compte a rebours SOS avec annulation possible.
             </p>
+          </div>
+        )}
+
+        {canShowTracking && (
+          <div className="bg-white rounded-[30px] p-4 shadow-lg">
+            <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h3 className="break-words text-lg font-bold text-[#16324f]">
+                  {service.serviceFamily === "delivery" ? "Suivi de livraison" : "Suivi de mission"}
+                </h3>
+                <p className="mt-1 break-words text-sm text-[#70839a]">
+                  {clientLocation?.address || "Adresse client en attente"}{providerLocation?.address ? ` • ${providerLocation.address}` : ""}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#edf5fb] px-3 py-2 text-xs font-bold text-[#1260a1]">
+                Live
+              </span>
+            </div>
+            <div className="h-[320px] overflow-hidden rounded-[24px]">
+              <MapPicker
+                center={providerLocation || clientLocation}
+                initialPickup={clientLocation}
+                initialDestination={providerLocation}
+                driverPosition={providerLocation}
+                readOnly
+              />
+            </div>
           </div>
         )}
 

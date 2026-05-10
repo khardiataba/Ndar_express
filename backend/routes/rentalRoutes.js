@@ -51,22 +51,6 @@ router.get("/", async (req, res) => {
   }
 })
 
-// Get vehicle rental by ID
-router.get("/:id", async (req, res) => {
-  try {
-    const rental = await VehicleRental.findById(req.params.id)
-      .populate("provider", "name email phone rating profilePhotoUrl providerDetails")
-
-    if (!rental) {
-      return res.status(404).json({ success: false, error: "Vehicle not found" })
-    }
-
-    res.json({ success: true, rental })
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
 // Get rentals by vehicle type
 router.get("/type/:typeQuery", async (req, res) => {
   try {
@@ -93,6 +77,34 @@ router.get("/type/:typeQuery", async (req, res) => {
     }
 
     res.json({ success: true, rentals: filtered, count: filtered.length })
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Get rentals by provider
+router.get("/provider/:providerId", async (req, res) => {
+  try {
+    const rentals = await VehicleRental.find({ provider: req.params.providerId })
+      .populate("provider", "name rating profilePhotoUrl")
+
+    res.json({ success: true, rentals })
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// Get vehicle rental by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const rental = await VehicleRental.findById(req.params.id)
+      .populate("provider", "name email phone rating profilePhotoUrl providerDetails")
+
+    if (!rental) {
+      return res.status(404).json({ success: false, error: "Vehicle not found" })
+    }
+
+    res.json({ success: true, rental })
   } catch (error) {
     res.status(500).json({ success: false, error: error.message })
   }
@@ -195,18 +207,6 @@ router.delete("/:id", authMiddleware, requireRole("technician"), async (req, res
       success: true,
       message: "Rental deleted successfully"
     })
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
-// Get rentals by provider
-router.get("/provider/:providerId", async (req, res) => {
-  try {
-    const rentals = await VehicleRental.find({ provider: req.params.providerId })
-      .populate("provider", "name rating profilePhotoUrl")
-
-    res.json({ success: true, rentals })
   } catch (error) {
     res.status(500).json({ success: false, error: error.message })
   }

@@ -6,6 +6,7 @@ const Ride = require('../models/Ride');
 const { validateLocation } = require('../utils/locationValidation');
 
 const DEFAULT_ALLOWED_ORIGINS = [
+  'https://yoonwi-app.vercel.app',
   'https://ndar-express-eezj.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',

@@ -27,8 +27,8 @@ const TopNav = () => {
   }
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-[9998] max-w-full overflow-hidden px-3 pt-4 sm:px-4 sm:pt-5">
-      <div className="ndar-shell">
+    <nav className="fixed left-0 right-0 top-0 z-[9998] max-w-full overflow-x-clip px-3 pt-4 sm:px-4 sm:pt-5">
+      <div className="ndar-shell max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-2rem)]">
         <div className="ndar-panel flex min-w-0 items-center justify-between gap-2 rounded-[24px] px-3 py-3 backdrop-blur-xl sm:gap-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 flex-shrink items-center gap-2 sm:gap-3">
             {showBackButton && (
@@ -54,10 +54,10 @@ const TopNav = () => {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/profile")}
-              className="flex flex-shrink-0 items-center gap-2 rounded-full bg-white/10 px-2 py-2 transition-colors hover:bg-white/15 sm:gap-3 sm:px-4"
+              className="flex min-w-0 max-w-[44vw] flex-shrink items-center gap-2 rounded-full bg-white/10 px-2 py-2 transition-colors hover:bg-white/15 sm:max-w-none sm:gap-3 sm:px-4"
             >
               {photoUrl ? (
                 <img

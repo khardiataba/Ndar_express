@@ -44,7 +44,7 @@ const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[9999] max-w-full overflow-visible px-3 pb-3 sm:px-4 sm:pb-4">
-      <div className="ndar-shell">
+      <div className="ndar-shell max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-2rem)]">
         <div className="ndar-panel flex min-w-0 items-center justify-around rounded-[30px] px-1 py-2 backdrop-blur-xl sm:px-2 sm:py-3">
           {mainItems.map((item) => (
             <NavLink
@@ -58,7 +58,7 @@ const BottomNav = () => {
               }
             >
               <AppIcon name={item.icon} className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="line-clamp-1">{item.label}</span>
+              <span className="hidden max-w-full truncate xs:inline sm:inline">{item.label}</span>
             </NavLink>
           ))}
 
@@ -70,7 +70,7 @@ const BottomNav = () => {
               }`}
             >
               <AppIcon name="menu" className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="line-clamp-1">Menu</span>
+              <span className="hidden max-w-full truncate xs:inline sm:inline">Menu</span>
             </button>
 
             {showMenu && (
