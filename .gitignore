@@ -1,26 +1,35 @@
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
-.envscode\extensions.json
-.vscode\settings.json
-.vscode\launch.json
-.vscode\tasks.json
-.vscode\snippets\*.code-snippets
-#Ignore node modules
+# VSCode
+.vscode/
+
+# Node modules
 node_modules/
-#Ignore build files
+
+# Build files
 dist/
 build/
-#Ignore logs
+
+# Logs
 logs/
 *.log
-#Ignore environment variables
+npm-debug.log*
+yarn-error.log*
+
+# Environment variables
 .env
-#Ignore coverage reports
+.env.local
+.env.production
+backend/.env
+frontend/.env
+
+
+# Coverage
 coverage/
-#Ignore OS files
+
+# OS files
 .DS_Store
 Thumbs.db
-#Ignore IDE files
+
+# IDE files
 .idea/
 *.suo
 *.ntvs*
