@@ -21,6 +21,7 @@ yarn-error.log*
 backend/.env
 frontend/.env
 
+
 # Coverage
 coverage/
 
