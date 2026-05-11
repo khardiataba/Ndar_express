@@ -6,6 +6,8 @@ const User = require("../models/User")
 const ProviderGallery = require("../models/ProviderGallery")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
 const { APP_COMMISSION_PERCENT, serviceCommission } = require("../utils/pricing")
+const googleMapsService = require("../services/googleMapsService")
+const { validateLocation } = require("../utils/locationValidation")
 
 const router = express.Router()
 
@@ -419,6 +421,23 @@ const serializeProvider = (provider, viewerCoords = null, portfolio = null) => {
 
 const generateSafetyCode = () => crypto.randomInt(1000, 10000).toString()
 
+const enrichLocationAddress = async (location, fallbackName) => {
+  const validation = validateLocation(location)
+  if (!validation.valid) return null
+
+  const genericAddress = /position|gps|actuelle|detect/i.test(String(validation.location.address || validation.location.name || ""))
+  if (!genericAddress) return validation.location
+
+  const result = await googleMapsService.reverseGeocode(validation.location.lat, validation.location.lng)
+  if (!result.success) return validation.location
+
+  return {
+    ...validation.location,
+    name: result.name || fallbackName || validation.location.name,
+    address: result.address || validation.location.address
+  }
+}
+
 const applyQuotedPrice = (request, quotedPrice) => {
   const finalPrice = Math.max(0, Number(quotedPrice) || 0)
   const commission = serviceCommission(finalPrice)
@@ -552,7 +571,7 @@ const maskSensitiveContact = (text) => {
 // Créer une demande de service (client)
 router.post("/", authMiddleware, requireVerified, async (req, res) => {
   try {
-    const { category, title, description, preferredProviderId, preferredProviderName, preferredDistanceKm } = req.body
+    const { category, title, description, preferredProviderId, preferredProviderName, preferredDistanceKm, clientLocation } = req.body
     const serviceFamily = getServiceFamily(category)
     const allowedCategories = Object.keys(serviceFamilyByCategory)
 
@@ -568,6 +587,7 @@ router.post("/", authMiddleware, requireVerified, async (req, res) => {
 
     const request = await ServiceRequest.create({
       clientId: req.user._id,
+      clientLocation: clientLocation ? await enrichLocationAddress(clientLocation, "Position client") : null,
       category,
       serviceFamily,
       title: maskSensitiveContact(title).slice(0, 140),
@@ -991,6 +1011,54 @@ router.post("/:id/safety-report", authMiddleware, requireVerified, async (req, r
       targetReportsCount: targetUser?.safetyReportsCount || null,
       suspended: targetUser?.status === "suspended" || false
     })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.patch("/:id/client-location", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const request = await ServiceRequest.findById(req.params.id)
+    if (!request) return res.status(404).json({ message: "Demande non trouvee" })
+
+    if (String(request.clientId || "") !== String(req.user._id || "")) {
+      return res.status(403).json({ message: "Acces non autorise" })
+    }
+
+    const location = await enrichLocationAddress(req.body?.location, "Position client")
+    if (!location) {
+      return res.status(400).json({ message: "Localisation client invalide" })
+    }
+
+    request.clientLocation = location
+    await request.save()
+
+    return res.json(await serializeServiceRequest(request, req.user.role, req.user._id))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.patch("/:id/provider-location", authMiddleware, requireVerified, requireRole(["technician", "server"]), async (req, res) => {
+  try {
+    const request = await ServiceRequest.findById(req.params.id)
+    if (!request) return res.status(404).json({ message: "Demande non trouvee" })
+
+    if (String(request.technicianId || "") !== String(req.user._id || "")) {
+      return res.status(403).json({ message: "Cette mission ne vous est pas attribuee" })
+    }
+
+    const location = await enrichLocationAddress(req.body?.location, "Position prestataire")
+    if (!location) {
+      return res.status(400).json({ message: "Localisation prestataire invalide" })
+    }
+
+    request.currentProviderLocation = location
+    await request.save()
+
+    return res.json(await serializeServiceRequest(request, req.user.role, req.user._id))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })

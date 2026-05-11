@@ -39,6 +39,7 @@ const pickupIcon = createMapIcon("pin", "#165c96")
 const destinationIcon = createMapIcon("flag", "#18c56e")
 const carIcon = createMapIcon("car", "#d7ae49")
 const MAPBOX_TOKEN = String(import.meta.env.VITE_MAPBOX_TOKEN || "").trim()
+
 const MAPBOX_STYLE = import.meta.env.VITE_MAPBOX_STYLE || "mapbox/navigation-day-v1"
 const mapTileUrl = MAPBOX_TOKEN
   ? `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE}/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`

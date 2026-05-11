@@ -52,14 +52,19 @@ const LocationPicker = ({
     try {
       const result = await googleMapsService.reverseGeocode(location);
       if (result.success) {
-        setAddress(result.address.formatted);
+        const resolvedAddress = result.address?.formatted || result.address || `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+        setAddress(resolvedAddress);
+        return resolvedAddress;
       }
     } catch (error) {
       console.error('Erreur géocodage inverse:', error);
-      setAddress(`${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`);
+      const fallbackAddress = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+      setAddress(fallbackAddress);
+      return fallbackAddress;
     } finally {
       setIsLoading(false);
     }
+    return `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
   }, []);
 
   // Gestionnaire de clic sur la carte
@@ -81,15 +86,15 @@ const LocationPicker = ({
       }
     }]);
 
-    await reverseGeocodeLocation(latLng);
+    const resolvedAddress = await reverseGeocodeLocation(latLng);
 
     if (onLocationSelect) {
       onLocationSelect({
         ...latLng,
-        address: address
+        address: resolvedAddress
       });
     }
-  }, [address, onLocationSelect, reverseGeocodeLocation]);
+  }, [onLocationSelect, reverseGeocodeLocation]);
 
   // Gestionnaire de sélection de lieu depuis la recherche
   const handlePlaceSelect = useCallback((place) => {
@@ -183,7 +188,7 @@ const LocationPicker = ({
       )}
 
       {/* Barre de recherche d'adresse */}
-      <div className="flex space-x-2">
+      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <input
           type="text"
           value={address}
@@ -194,20 +199,20 @@ const LocationPicker = ({
             }
           }}
           placeholder={placeholder}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={isLoading}
         />
         <button
           onClick={() => handleAddressSearch(address)}
           disabled={isLoading || !address.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-0 break-words px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'SEARCH' : 'Rechercher'}
         </button>
         {showCurrentLocation && (
           <button
             onClick={useCurrentLocation}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="min-w-0 break-words px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             title="Utiliser ma position actuelle"
           >
             PIN
@@ -236,13 +241,13 @@ const LocationPicker = ({
         <div className="bg-blue-50 p-3 rounded-md">
           <div className="flex items-center text-sm text-blue-700">
             <span className="mr-2">PIN</span>
-            <div>
+            <div className="min-w-0">
               <div className="font-medium">Position sélectionnée</div>
               <div className="text-xs text-blue-600">
                 {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
               </div>
               {address && (
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="mt-1 break-words text-xs text-blue-600">
                   {address}
                 </div>
               )}

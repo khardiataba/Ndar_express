@@ -56,6 +56,8 @@ const ServiceRequestSchema = new mongoose.Schema(
   {
     clientId: { type: String, required: true },
     technicianId: { type: String, default: null },
+    clientLocation: { type: locationSchema, default: null },
+    currentProviderLocation: { type: locationSchema, default: null },
     preferredProviderId: { type: String, default: null },
     preferredProviderName: { type: String, default: "" },
     preferredDistanceKm: { type: Number, default: null },
@@ -107,6 +109,13 @@ const ServiceRequestSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    paymentMethod: { type: String, enum: ["Cash", "Wave", "OM", "Card"], default: "Cash" },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "refunded"],
+      default: "pending"
+    },
+    paidAt: { type: Date, default: null },
     status: {
       type: String,
       enum: ["pending", "quoted", "accepted", "in_progress", "completed", "cancelled"],

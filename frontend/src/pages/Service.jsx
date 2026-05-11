@@ -180,12 +180,24 @@ const Service = () => {
     if (!navigator.geolocation) return
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setClientLocation({
+      async (position) => {
+        const nextLocation = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           name: "Votre position",
           address: "Position detectee"
+        }
+        try {
+          const response = await api.get("/maps/reverse-geocode", {
+            params: { lat: nextLocation.lat, lng: nextLocation.lng }
+          })
+          nextLocation.name = response.data?.name || nextLocation.name
+          nextLocation.address = response.data?.address || nextLocation.address
+        } catch (locationError) {
+          console.warn("Adresse client indisponible:", locationError)
+        }
+        setClientLocation({
+          ...nextLocation
         })
       },
       () => {
@@ -349,7 +361,8 @@ const Service = () => {
         description: description.trim(),
         preferredProviderId: toProviderId(selectedProvider?.id) || null,
         preferredProviderName: selectedProvider?.name || "",
-        preferredDistanceKm: selectedProvider?.distanceKm ?? null
+        preferredDistanceKm: selectedProvider?.distanceKm ?? null,
+        clientLocation
       })
 
       setCreatedSafetyCode(response.data?.safetyCode || null)

@@ -135,7 +135,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MainLayout>
-              <DriverTracking />
+              {user?.role === "driver" ? <DriverTracking /> : <RideTracking />}
             </MainLayout>
           </ProtectedRoute>
         }

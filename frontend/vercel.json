@@ -10,6 +10,10 @@
       "destination": "https://yoon-wi.onrender.com/socket.io/:path*"
     },
     {
+      "source": "/uploads/:path*",
+      "destination": "https://yoon-wi.onrender.com/uploads/:path*"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }

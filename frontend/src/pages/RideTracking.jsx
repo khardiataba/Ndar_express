@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import api from "../api"
 import MapPicker from "../components/MapPicker"
 import useShakeDetection from "../hooks/useShakeDetection"
@@ -20,8 +20,18 @@ const trackingSteps = [
   { key: "completed", label: "Arrivee a destination", status: "completed" }
 ]
 
+const reverseGeocode = async (lat, lng, fallback = "Position actuelle") => {
+  try {
+    const response = await api.get("/maps/reverse-geocode", { params: { lat, lng } })
+    return response.data?.address || response.data?.name || fallback
+  } catch {
+    return fallback
+  }
+}
+
 const RideTracking = () => {
   const navigate = useNavigate()
+  const { rideId: routeRideId } = useParams()
   const { emit, isConnected } = useSocket()
   const [driverPosition, setDriverPosition] = useState(null)
   const [ride, setRide] = useState(null)
@@ -32,6 +42,11 @@ const RideTracking = () => {
 
   useEffect(() => {
     try {
+      if (routeRideId) {
+        setRide({ rideId: routeRideId })
+        return
+      }
+
       const savedRide = localStorage.getItem("currentRide")
       if (savedRide) {
         setRide(JSON.parse(savedRide))
@@ -40,7 +55,7 @@ const RideTracking = () => {
       console.error("Erreur de lecture de la course sauvegardee:", storageError)
       setError("Impossible de relire les details de votre course.")
     }
-  }, [])
+  }, [routeRideId])
 
   useEffect(() => {
     const rideId = ride?._id || ride?.rideId || ride?.id
@@ -81,12 +96,15 @@ const RideTracking = () => {
     let watchId = null
 
     watchId = navigator.geolocation.watchPosition(
-      (position) => {
+      async (position) => {
+        const latitude = Number(position.coords.latitude)
+        const longitude = Number(position.coords.longitude)
+        const address = await reverseGeocode(latitude, longitude, ride?.pickup?.address || ride?.pickup?.name || "Position actuelle")
         emit("passenger:location-update", {
           rideId,
-          latitude: Number(position.coords.latitude),
-          longitude: Number(position.coords.longitude),
-          address: ride?.pickup?.address || ride?.pickup?.name || "Position actuelle"
+          latitude,
+          longitude,
+          address
         })
       },
       (geoError) => {

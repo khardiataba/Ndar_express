@@ -112,16 +112,16 @@ export default function RideDetails() {
 
   return (
     <div className="min-h-screen bg-[#f7f1e6] pb-24">
-      <div className="bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] text-white p-4 rounded-b-[30px] shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-2xl bg-white/20 text-white font-semibold">
+      <div className="max-w-full overflow-x-hidden bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] text-white p-4 rounded-b-[30px] shadow-lg">
+        <div className="mb-4 flex min-w-0 items-center justify-between gap-2">
+          <button onClick={() => navigate(-1)} className="shrink-0 px-3 py-2 rounded-2xl bg-white/20 text-white text-sm font-semibold sm:px-4">
             Retour
           </button>
-          <h1 className="text-xl font-bold">Details course</h1>
-          <div className="w-10"></div>
+          <h1 className="min-w-0 truncate text-base font-bold sm:text-xl">Details course</h1>
+          <div className="w-8 shrink-0 sm:w-10"></div>
         </div>
-        <h2 className="text-2xl font-bold">{ride.vehicleType || "Course"}</h2>
-        <div className="flex gap-3 mt-2 text-sm">
+        <h2 className="break-words text-2xl font-bold">{ride.vehicleType || "Course"}</h2>
+        <div className="flex flex-wrap gap-3 mt-2 text-sm">
           <span className="bg-white/20 px-3 py-1 rounded-full">{rideStatusLabel}</span>
           <span className="bg-white/20 px-3 py-1 rounded-full">{Number(ride.price || 0).toLocaleString()} FCFA</span>
         </div>

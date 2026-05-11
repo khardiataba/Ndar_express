@@ -731,6 +731,13 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
 
                       {req.status === "accepted" && (
                         <div className="mt-4 rounded-[22px] bg-[linear-gradient(180deg,#fff7eb_0%,#fff1db_100%)] p-4">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/service/${req._id}`)}
+                            className="mb-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#1260a1] shadow-[0_10px_22px_rgba(8,35,62,0.06)]"
+                          >
+                            Ouvrir suivi
+                          </button>
                           <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                             <div>
                               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5a8fd1]">Code de sécurité client</label>
@@ -764,6 +771,13 @@ const TechnicianDashboard = ({ variant: forcedVariant }) => {
 
                       {req.status === "in_progress" && !closeFlowById[req._id] && (
                         <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/service/${req._id}`)}
+                            className="rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#1260a1] shadow-[0_10px_22px_rgba(8,35,62,0.06)]"
+                          >
+                            Ouvrir suivi
+                          </button>
                           <button
                             type="button"
                             onClick={() => toggleCloseFlow(req._id)}

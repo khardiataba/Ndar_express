@@ -1,6 +1,5 @@
 const express = require("express")
 const crypto = require("crypto")
-const https = require("https")
 const Ride = require("../models/Ride")
 const Message = require("../models/Message")
 const User = require("../models/User")
@@ -8,42 +7,42 @@ const socketManager = require("../socket/socketManager")
 const { authMiddleware, requireRole, requireVerified } = require("../middleware/auth")
 const { computeRideFare, computeStudentBusFare, normalizeStudentBusZone, rideCommission } = require("../utils/pricing")
 const { createNotification } = require("../services/notificationService")
-const { getPaginationParams, buildPaginatedResponse } = require("../utils/pagination")
+const googleMapsService = require("../services/googleMapsService")
 const { validateLocation, validateLocationPair } = require("../utils/locationValidation")
 
 const router = express.Router()
 const objectIdRegex = /^[0-9a-fA-F]{24}$/
+const commissionCreditMessage =
+  "Credit commission insuffisant. Rechargez par Wave ou Orange Money au 781488070, puis attendez la validation admin."
 
 const validateRideId = (req, res, next) => {
   if (!objectIdRegex.test(String(req.params.id || ""))) {
     return res.status(400).json({ message: "Identifiant de course invalide" })
   }
-  return next()
+  next()
 }
 
 const haversineDistanceKm = (pickup, destination) => {
   const toRadians = (value) => (value * Math.PI) / 180
   const earthRadiusKm = 6371
-  const deltaLat = toRadians((destination.lat || 0) - (pickup.lat || 0))
-  const deltaLng = toRadians((destination.lng || 0) - (pickup.lng || 0))
-  const pickupLat = toRadians(pickup.lat || 0)
-  const destinationLat = toRadians(destination.lat || 0)
-
+  const dLat = toRadians(destination.lat - pickup.lat)
+  const dLng = toRadians(destination.lng - pickup.lng)
   const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(pickupLat) * Math.cos(destinationLat) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2)
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(pickup.lat)) *
+      Math.cos(toRadians(destination.lat)) *
+      Math.sin(dLng / 2) ** 2
 
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 const buildFallbackEstimate = (pickup, destination) => {
-  const straightDistance = haversineDistanceKm(pickup, destination)
-  const adjustedDistance = Math.max(1, Math.round(straightDistance * 1.18 * 10) / 10)
-  const durationMin = Math.max(4, Math.round((adjustedDistance / 28) * 60))
+  const distance = Math.max(1, Math.round(haversineDistanceKm(pickup, destination) * 1.18 * 10) / 10)
+  const duration = Math.max(4, Math.round((distance / 28) * 60))
 
   return {
-    distanceKm: adjustedDistance,
-    durationMin,
+    distanceKm: distance,
+    durationMin: duration,
     geometry: [
       [pickup.lat, pickup.lng],
       [destination.lat, destination.lng]
@@ -51,405 +50,109 @@ const buildFallbackEstimate = (pickup, destination) => {
   }
 }
 
-const requestJson = (url, timeoutMs = 12000) =>
-  new Promise((resolve, reject) => {
-    const req = https.get(url, (resp) => {
-      let data = ""
-      resp.on("data", (chunk) => (data += chunk))
-      resp.on("end", () => {
-        if (resp.statusCode < 200 || resp.statusCode >= 300) {
-          reject(new Error(`HTTP ${resp.statusCode}`))
-          return
-        }
+const buildRouteEstimate = async (pickup, destination) => {
+  const route = await googleMapsService.calculateRoute(pickup, destination, { mode: "driving" })
+  if (!route.success) return buildFallbackEstimate(pickup, destination)
 
-        try {
-          resolve(JSON.parse(data))
-        } catch (error) {
-          reject(error)
-        }
-      })
-    })
-
-    req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error("Route provider timeout"))
-    })
-    req.on("error", reject)
-  })
-
-const getMapboxAccessToken = () =>
-  String(process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN || "").trim()
-
-const mapRouteToEstimate = (route) => {
-  if (!route) return null
-
-  const distanceKm = Math.round((Number(route.distance || 0) / 1000) * 10) / 10
-  const durationMin = Math.max(1, Math.round(Number(route.duration || 0) / 60))
-  const geometry = Array.isArray(route.geometry?.coordinates)
-    ? route.geometry.coordinates
-        .map(([lng, lat]) => [Number(lat), Number(lng)])
-        .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
-    : []
-
-  if (!Number.isFinite(distanceKm) || distanceKm <= 0 || !Number.isFinite(durationMin) || !geometry.length) {
-    return null
-  }
-
-  return { distanceKm, durationMin, geometry }
-}
-
-const fetchMapboxEstimate = async (pickup, destination) => {
-  const token = getMapboxAccessToken()
-  if (!token) return null
-
-  const coordinates = `${pickup.lng},${pickup.lat};${destination.lng},${destination.lat}`
-  const params = new URLSearchParams({
-    alternatives: "false",
-    geometries: "geojson",
-    overview: "full",
-    steps: "false",
-    language: "fr",
-    access_token: token
-  })
-  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?${params}`
-  const json = await requestJson(url)
-  return mapRouteToEstimate(json.routes?.[0])
-}
-
-const fetchOsrmEstimate = async (pickup, destination) => {
-  const coords = `${pickup.lng},${pickup.lat};${destination.lng},${destination.lat}`
-  const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`
-  const json = await requestJson(url)
-  return mapRouteToEstimate(json.routes?.[0])
-}
-
-const normalizeLocation = (location) => {
-  if (!location) return null
-
-  if (typeof location === "string") {
-    return { name: location, address: location }
-  }
+  const distanceKm = Math.max(0.1, Math.round((Number(route.distance?.value || 0) / 1000) * 10) / 10)
+  const durationMin = Math.max(1, Math.round(Number(route.duration?.value || 0) / 60))
+  const fallback = buildFallbackEstimate(pickup, destination)
 
   return {
-    name: location.name || location.address || "Point sélectionné",
-    address: location.address || location.name || "Point sélectionné",
-    lat: location.lat ?? null,
-    lng: location.lng ?? null
+    distanceKm,
+    durationMin,
+    geometry: Array.isArray(route.geometry) && route.geometry.length > 1 ? route.geometry : fallback.geometry
   }
 }
 
-const normalizeRouteGeometry = (geometry) => {
-  if (!Array.isArray(geometry)) return []
+const enrichLocationAddress = async (location, fallbackName) => {
+  const genericAddress = /position|gps|actuelle|confirm/i.test(String(location?.address || location?.name || ""))
+  if (!genericAddress) return location
 
-  return geometry
-    .map((point) => {
-      if (!Array.isArray(point) || point.length < 2) return null
-      const lat = Number(point[0])
-      const lng = Number(point[1])
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-      return [lat, lng]
-    })
-    .filter(Boolean)
+  const result = await googleMapsService.reverseGeocode(location.lat, location.lng)
+  if (!result.success) return location
+
+  return {
+    ...location,
+    name: result.name || fallbackName || location.name,
+    address: result.address || location.address
+  }
 }
 
 const generateSafetyCode = () => crypto.randomInt(1000, 10000).toString()
 
-const buildRideParticipantSummary = (user) => {
-  if (!user) return null
-  const plain = typeof user.toObject === "function" ? user.toObject() : { ...user }
-  return {
-    id: plain._id,
-    name: plain.name || `${plain.firstName || ""} ${plain.lastName || ""}`.trim(),
-    firstName: plain.firstName || "",
-    lastName: plain.lastName || "",
-    role: plain.role,
-    status: plain.status,
-    profilePhotoUrl: plain.profilePhotoUrl || "",
-    phone: plain.phone || ""
-  }
+const canAccessRide = (ride, user) => {
+  if (!ride || !user) return false
+  if (user.role === "admin") return true
+
+  const userId = String(user._id)
+  return String(ride.userId?._id || ride.userId || "") === userId || String(ride.driverId?._id || ride.driverId || "") === userId
 }
-
-const loadRideParticipants = async (ride) => {
-  const ids = [ride?.userId, ride?.driverId].filter(Boolean).map((value) => String(value))
-  if (!ids.length) return { client: null, driver: null }
-
-  const users = await User.find({ _id: { $in: ids } }).select("firstName lastName name role status profilePhotoUrl phone")
-  const summaries = new Map(users.map((user) => [String(user._id), buildRideParticipantSummary(user)]))
-
-  return {
-    client: summaries.get(String(ride?.userId || "")) || null,
-    driver: summaries.get(String(ride?.driverId || "")) || null
-  }
-}
-
-const serializeRide = async (ride, { includeSafetyCode = false, viewerUserId = null, viewerRole = "client" } = {}) => {
-  const plainRide = typeof ride?.toObject === "function" ? ride.toObject() : { ...ride }
-  delete plainRide.safetyReports
-  const participants = await loadRideParticipants(plainRide)
-
-  if (participants.client) {
-    plainRide.client = participants.client
-  }
-
-  if (participants.driver) {
-    plainRide.driver = participants.driver
-  }
-
-  if (!includeSafetyCode) {
-    delete plainRide.safetyCode
-  } else if (viewerRole !== "admin" && String(plainRide.userId || "") !== String(viewerUserId || "")) {
-    delete plainRide.safetyCode
-  }
-  return plainRide
-}
-
-const serializeAvailableRide = (ride) => {
-  const plain = typeof ride?.toObject === "function" ? ride.toObject() : { ...ride }
-  return {
-    _id: plain._id,
-    status: plain.status,
-    driverAvailabilityStatus: plain.driverAvailabilityStatus,
-    pickup: {
-      name: plain.pickup?.name || "Depart",
-      address: plain.pickup?.name || "Zone de depart",
-      lat: plain.pickup?.lat,
-      lng: plain.pickup?.lng
-    },
-    destination: {
-      name: plain.destination?.name || "Destination",
-      address: "Adresse affichee apres acceptation"
-    },
-    price: plain.price,
-    appCommissionPercent: plain.appCommissionPercent,
-    appCommissionAmount: plain.appCommissionAmount,
-    providerNetAmount: plain.providerNetAmount,
-    vehicleType: plain.vehicleType,
-    rideCategory: plain.rideCategory,
-    busZone: plain.busZone,
-    distanceKm: plain.distanceKm,
-    durationMin: plain.durationMin,
-    createdAt: plain.createdAt
-  }
-}
-
-const getProviderCommissionBalance = (user) => Math.round(Number(user?.commissionCreditBalance || 0))
 
 const ensurePositiveCommissionCredit = (user) => {
-  const balance = getProviderCommissionBalance(user)
+  const balance = Math.round(Number(user?.commissionCreditBalance || 0))
   if (balance <= 0) {
     return {
       ok: false,
       balance,
-      message: "Credit commission insuffisant. Rechargez par Wave ou Orange Money au 781488070, puis attendez la validation admin."
+      message: commissionCreditMessage
     }
   }
   return { ok: true, balance }
 }
 
-const canAccessRide = (ride, user) => {
-  if (!ride || !user) return false
-  if (user.role === "admin") return true
-  const rideUserId = String(ride.userId || "")
-  const rideDriverId = String(ride.driverId || "")
-  const userId = String(user._id || "")
-  return rideUserId === userId || rideDriverId === userId
+const normalizePaymentMethod = (value) => {
+  const method = String(value || "Cash").trim()
+  return ["Cash", "Wave", "OM", "Card"].includes(method) ? method : "Cash"
 }
 
-const getOtherPartyId = (ride, reporterId) => {
+const serializeRide = (ride, user) => {
+  const plain = typeof ride?.toObject === "function" ? ride.toObject() : { ...ride }
+  const viewerId = String(user?._id || "")
+  const isClient = String(plain.userId?._id || plain.userId || "") === viewerId
+
+  if (!isClient && user?.role !== "admin") {
+    delete plain.safetyCode
+  }
+
+  plain.driver = plain.driverId && typeof plain.driverId === "object" ? plain.driverId : null
+  plain.client = plain.userId && typeof plain.userId === "object" ? plain.userId : null
+
+  return plain
+}
+
+const findRideForViewer = async (rideId, user, includeSafetyCode = false) => {
+  const query = Ride.findById(rideId)
+    .populate("userId", "name firstName lastName phone profilePhotoUrl")
+    .populate("driverId", "name firstName lastName phone profilePhotoUrl rating providerDetails currentLocation")
+
+  if (includeSafetyCode) query.select("+safetyCode")
+
+  const ride = await query
   if (!ride) return null
-  const reporter = String(reporterId || "")
-  const userId = String(ride.userId || "")
-  const driverId = String(ride.driverId || "")
-
-  if (reporter && reporter === userId) {
-    return driverId || null
-  }
-
-  if (reporter && reporter === driverId) {
-    return userId || null
-  }
-
-  return driverId || userId || null
+  if (!canAccessRide(ride, user)) return false
+  return ride
 }
 
-const hasRegisteredBusForDriver = (user) => {
-  const vehicleType = String(user?.providerDetails?.vehicleType || "").toLowerCase()
-  const vehiclePlate = String(user?.providerDetails?.vehiclePlate || "").trim()
-  const looksLikeBus = /bus|minibus|autocar|transport/.test(vehicleType)
-  return looksLikeBus && Boolean(vehiclePlate)
-}
-
-const maybeSuspendUser = async (userId, reason) => {
-  if (!userId) return null
-
-  const targetUser = await User.findById(userId)
-  if (!targetUser) return null
-
-  targetUser.safetyReportsCount = (targetUser.safetyReportsCount || 0) + 1
-  targetUser.safetyLastReportAt = new Date()
-
-  if (targetUser.safetyReportsCount >= 3) {
-    targetUser.status = "suspended"
-    targetUser.safetySuspendedAt = new Date()
-    targetUser.safetySuspensionReason = reason
-    targetUser.reviewNote = reason
-  }
-
-  await targetUser.save()
-  return targetUser
-}
-
-// Créer une nouvelle réservation (client)
-router.post("/", authMiddleware, requireVerified, async (req, res) => {
-  try {
-    const { pickup, destination, price, vehicleType, paymentMethod, distanceKm, durationMin, routeGeometry, rideMode, busZone, busOptions } = req.body
-    if (!pickup || !destination || !price) {
-      return res.status(400).json({ message: "pickup, destination et price requis" })
-    }
-
-    // Validate locations
-    const locationValidation = validateLocationPair(pickup, destination)
-    if (!locationValidation.valid) {
-      return res.status(400).json({ message: "Localisation invalide", errors: locationValidation.errors })
-    }
-
-    // Validate price
-    if (typeof price !== 'number' || price <= 0 || price > 1000000) {
-      return res.status(400).json({ message: "Prix invalide" })
-    }
-
-    const normalizedBusZone = normalizeStudentBusZone(busZone)
-    const isStudentBus = rideMode === "bus_student" && Boolean(normalizedBusZone)
-    const finalPrice = isStudentBus ? computeStudentBusFare(normalizedBusZone) : computeRideFare(distanceKm, durationMin)
-    const commission = rideCommission(finalPrice)
-    const safetyCode = generateSafetyCode()
-    const safeBusOptions = {
-      subscriptionPlan: "none",
-      reservedSeat: false,
-      seats: 1,
-      travelDate: null,
-      useTransportCredit: false,
-      creditAmount: 0,
-      amountPaidNow: 0,
-      amountRemaining: 0
-    }
-
-    if (isStudentBus && busOptions && typeof busOptions === "object") {
-      const plan = String(busOptions.subscriptionPlan || "none").trim().toLowerCase()
-      safeBusOptions.subscriptionPlan = ["none", "daily", "weekly", "monthly"].includes(plan) ? plan : "none"
-      safeBusOptions.reservedSeat = Boolean(busOptions.reservedSeat)
-      safeBusOptions.seats = Math.max(1, Math.min(4, Number(busOptions.seats) || 1))
-      const parsedTravelDate = busOptions.travelDate ? new Date(busOptions.travelDate) : null
-      safeBusOptions.travelDate = parsedTravelDate && !Number.isNaN(parsedTravelDate.getTime()) ? parsedTravelDate : null
-      safeBusOptions.useTransportCredit = Boolean(busOptions.useTransportCredit)
-      safeBusOptions.creditAmount = Math.max(0, Number(busOptions.creditAmount) || 0)
-      safeBusOptions.amountPaidNow = Math.max(0, Number(busOptions.amountPaidNow) || 0)
-      safeBusOptions.amountRemaining = Math.max(0, Number(busOptions.amountRemaining) || 0)
-
-      if (safeBusOptions.useTransportCredit) {
-        const recomputedRemaining = Math.max(0, finalPrice - safeBusOptions.amountPaidNow)
-        safeBusOptions.amountRemaining = recomputedRemaining
-      }
-    }
-
-    const rideTypeLabelByZone = {
-      marche: "Bus Eleves - Jusqu'au marche",
-      ville: "Bus Eleves - Ville"
-    }
-    const availableDrivers = socketManager.findAvailableDrivers(
-      { latitude: locationValidation.pickup.lat, longitude: locationValidation.pickup.lng },
-      null
-    )
-    const driverAvailabilityStatus = availableDrivers.length > 0 ? "searching" : "no_driver_available"
-
-    const ride = await Ride.create({
-      userId: req.user._id,
-      pickup: locationValidation.pickup,
-      destination: locationValidation.destination,
-      price: finalPrice,
-      ...commission,
-      distanceKm: locationValidation.distanceKm || distanceKm || null,
-      durationMin: durationMin || null,
-      vehicleType: isStudentBus ? rideTypeLabelByZone[normalizedBusZone] : (vehicleType || "YOONWI Classic"),
-      rideCategory: isStudentBus ? "bus_student" : "standard",
-      busZone: isStudentBus ? normalizedBusZone : "",
-      busOptions: isStudentBus ? safeBusOptions : undefined,
-      paymentMethod: paymentMethod || "Cash",
-      routeGeometry: normalizeRouteGeometry(routeGeometry),
-      safetyCode,
-      status: "pending",
-      driverAvailabilityStatus
-    })
-
-    socketManager.emitNewRideRequest(
-      ride,
-      { latitude: locationValidation.pickup.lat, longitude: locationValidation.pickup.lng },
-      null
-    )
-
-    return res.status(201).json({
-      ...(await serializeRide(ride, { includeSafetyCode: true, viewerUserId: req.user._id, viewerRole: req.user.role })),
-      safetyCode,
-      safetyHint: "Partage ce code au chauffeur quand tu montes dans le vehicule."
-    })
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Erreur serveur" })
-  }
-})
-
-// Estimer durée / distance via Mapbox, avec fallback OSRM puis estimation locale.
 router.post("/estimate", authMiddleware, requireVerified, async (req, res) => {
   try {
-    const { pickup, destination, rideMode, busZone } = req.body
-    if (!pickup || !destination) {
-      return res.status(400).json({ message: "pickup et destination requis" })
+    const { pickup, destination, rideMode, busZone } = req.body || {}
+    const validation = validateLocationPair(pickup, destination)
+    if (!validation.valid) {
+      return res.status(400).json({ message: "Localisation invalide" })
     }
 
-    // Validate locations
-    const locationValidation = validateLocationPair(pickup, destination)
-    if (!locationValidation.valid) {
-      return res.status(400).json({ message: "Localisation invalide", errors: locationValidation.errors })
-    }
+    const estimate = await buildRouteEstimate(validation.pickup, validation.destination)
+    const isBus = rideMode === "bus_student"
+    const suggestedPrice = isBus
+      ? computeStudentBusFare(normalizeStudentBusZone(busZone))
+      : computeRideFare(estimate.distanceKm, estimate.durationMin)
+    const commission = rideCommission(suggestedPrice)
 
-    const normalizedBusZone = normalizeStudentBusZone(busZone)
-    if (rideMode === "bus_student" && normalizedBusZone) {
-      const suggestedPrice = computeStudentBusFare(normalizedBusZone)
-      return res.json({
-        distanceKm: null,
-        durationMin: null,
-        geometry: [],
-        suggestedPrice,
-        ...rideCommission(suggestedPrice)
-      })
-    }
-
-    const fallbackEstimate = buildFallbackEstimate(locationValidation.pickup, locationValidation.destination)
-    let estimate = null
-    let provider = "fallback"
-
-    try {
-      estimate = await fetchMapboxEstimate(locationValidation.pickup, locationValidation.destination)
-      if (estimate) provider = "mapbox"
-    } catch (mapboxError) {
-      console.warn("Mapbox directions indisponible:", mapboxError.message)
-    }
-
-    if (!estimate) {
-      try {
-        estimate = await fetchOsrmEstimate(locationValidation.pickup, locationValidation.destination)
-        if (estimate) provider = "osrm"
-      } catch (osrmError) {
-        console.warn("OSRM indisponible:", osrmError.message)
-      }
-    }
-
-    const finalEstimate = estimate || fallbackEstimate
-    const suggestedPrice = computeRideFare(finalEstimate.distanceKm, finalEstimate.durationMin)
     return res.json({
-      ...finalEstimate,
-      provider,
+      ...estimate,
       suggestedPrice,
-      ...rideCommission(suggestedPrice)
+      ...commission
     })
   } catch (err) {
     console.error(err)
@@ -457,375 +160,253 @@ router.post("/estimate", authMiddleware, requireVerified, async (req, res) => {
   }
 })
 
-// Lister les courses du user (client ou driver)
+router.post("/", authMiddleware, requireVerified, async (req, res) => {
+  try {
+    const { pickup, destination, rideMode, busZone, vehicleType, paymentMethod } = req.body || {}
+
+    const validation = validateLocationPair(pickup, destination)
+    if (!validation.valid) {
+      return res.status(400).json({ message: "Localisation invalide" })
+    }
+
+    const isBus = rideMode === "bus_student"
+    const estimate = await buildRouteEstimate(validation.pickup, validation.destination)
+    const finalPrice = isBus
+      ? computeStudentBusFare(normalizeStudentBusZone(busZone))
+      : computeRideFare(estimate.distanceKm, estimate.durationMin)
+
+    if (!Number.isFinite(Number(finalPrice)) || Number(finalPrice) <= 0) {
+      return res.status(400).json({ message: "Tarif de course invalide" })
+    }
+
+    const commission = rideCommission(finalPrice)
+    const ride = await Ride.create({
+      userId: req.user._id,
+      pickup: validation.pickup,
+      destination: validation.destination,
+      price: finalPrice,
+      ...commission,
+      vehicleType: vehicleType || "YOONWI Classic",
+      rideCategory: isBus ? "bus_student" : "standard",
+      busZone: isBus ? normalizeStudentBusZone(busZone) : "",
+      paymentMethod: normalizePaymentMethod(paymentMethod),
+      distanceKm: estimate.distanceKm,
+      durationMin: estimate.durationMin,
+      routeGeometry: Array.isArray(req.body?.routeGeometry) && req.body.routeGeometry.length ? req.body.routeGeometry : estimate.geometry,
+      safetyCode: generateSafetyCode(),
+      status: "pending"
+    })
+
+    if (typeof socketManager.emitNewRideRequest === "function") {
+      socketManager.emitNewRideRequest(
+        ride,
+        { latitude: ride.pickup.lat, longitude: ride.pickup.lng },
+        ride.vehicleType
+      )
+    }
+
+    return res.status(201).json(serializeRide(ride, req.user))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.get("/available", authMiddleware, requireVerified, requireRole("driver"), async (req, res) => {
+  try {
+    const rides = await Ride.find({ status: "pending" }).sort({ createdAt: -1 })
+    return res.json(rides.map((ride) => serializeRide(ride, req.user)))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
 router.get("/", authMiddleware, requireVerified, async (req, res) => {
   try {
-    const { role, _id } = req.user
-    const filter = role === "driver" ? { driverId: _id } : { userId: _id }
+    const filter =
+      req.user.role === "driver"
+        ? { driverId: req.user._id }
+        : req.user.role === "admin"
+          ? {}
+          : { userId: req.user._id }
+
     const rides = await Ride.find(filter).sort({ createdAt: -1 })
-    return res.json(await Promise.all(rides.map((ride) => serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))))
+    return res.json(rides.map((ride) => serializeRide(ride, req.user)))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
   }
 })
 
-// Get single ride by ID
-// Courses disponibles (pour chauffeurs)
-router.get(
-  "/available",
-  authMiddleware,
-  requireVerified,
-  requireRole("driver"),
-  async (req, res) => {
-    try {
-      const rides = await Ride.find({ status: "pending" }).sort({ createdAt: -1 })
-      return res.json(rides.map((ride) => serializeAvailableRide(ride)))
-    } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Erreur serveur" })
-    }
-  }
-)
-
-// Get single ride by ID
 router.get("/:id", authMiddleware, requireVerified, validateRideId, async (req, res) => {
   try {
-    const { id } = req.params
-    const ride = await Ride.findById(id).populate("userId", "name phone email profilePhoto").populate("driverId", "name profilePhoto phone email")
+    const ride = await findRideForViewer(req.params.id, req.user, true)
+    if (ride === false) return res.status(403).json({ message: "Acces non autorise" })
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
 
-    if (!ride) {
-      return res.status(404).json({ message: "Course non trouvée" })
-    }
-
-    const isClient = ride.userId._id.toString() === req.user._id.toString()
-    const isDriver = ride.driverId?._id.toString() === req.user._id.toString()
-    const isAdmin = req.user.role === "admin"
-
-    if (!isClient && !isDriver && !isAdmin) {
-      return res.status(403).json({ message: "Accès non autorisé" })
-    }
-
-    const serialized = await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role })
-    return res.json(serialized)
+    return res.json(serializeRide(ride, req.user))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
   }
 })
 
-// Accepter une course (chauffeur)
-router.patch(
-  "/:id/driver-location",
-  authMiddleware,
-  requireVerified,
-  validateRideId,
-  requireRole("driver"),
-  async (req, res) => {
-    try {
-      const ride = await Ride.findById(req.params.id)
-      if (!ride) {
-        return res.status(404).json({ message: "Course non trouvée" })
-      }
-
-      if (String(ride.driverId || "") !== String(req.user._id || "")) {
-        return res.status(403).json({ message: "Cette course ne vous est pas attribuée" })
-      }
-
-      const locationInput = req.body?.location || req.body || {}
-      const locationValidation = validateLocation(
-        {
-          name: locationInput.name || "Position chauffeur",
-          address: locationInput.address || locationInput.name || "Position chauffeur",
-          lat: locationInput.lat,
-          lng: locationInput.lng
-        },
-        { checkServiceArea: true }
-      )
-
-      if (!locationValidation.valid) {
-        return res.status(400).json({ message: "Position chauffeur invalide", errors: locationValidation.errors })
-      }
-
-      ride.currentDriverLocation = locationValidation.location
-      await ride.save()
-
-      const payload = {
-        rideId: ride._id,
-        location: ride.currentDriverLocation,
-        source: String(req.body?.source || "device").slice(0, 20),
-        timestamp: new Date()
-      }
-
-      socketManager.notifyRideParticipants(ride._id, "driver:location-update", payload)
-      return res.json({
-        message: "Position chauffeur mise a jour",
-        location: ride.currentDriverLocation
-      })
-    } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Erreur serveur" })
-    }
-  }
-)
-
-router.patch(
-  "/:id/accept",
-  authMiddleware,
-  requireVerified,
-  validateRideId,
-  requireRole("driver"),
-  async (req, res) => {
-    try {
-      const ride = await Ride.findById(req.params.id)
-      if (!ride) return res.status(404).json({ message: "Course non trouvée" })
-      if (ride.status !== "pending") {
-        return res.status(400).json({ message: "Course non disponible" })
-      }
-
-      const creditStatus = ensurePositiveCommissionCredit(req.user)
-      if (!creditStatus.ok) {
-        return res.status(402).json(creditStatus)
-      }
-
-      if (ride.rideCategory === "bus_student" && !hasRegisteredBusForDriver(req.user)) {
-        return res.status(403).json({
-          message: "Cette course bus est reservee aux chauffeurs avec bus inscrit (type bus/minibus + immatriculation)."
-        })
-      }
-
-      ride.status = "accepted"
-      ride.driverId = req.user._id
-      ride.driverAvailabilityStatus = "driver_assigned"
-      await ride.save()
-
-      await createNotification({
-        userId: ride.userId,
-        title: 'Course acceptée',
-        message: 'Votre course a été acceptée par un chauffeur. Il arrive bientôt.',
-        category: 'success',
-        link: `/ride/${ride._id}`
-      })
-
-      await createNotification({
-        userId: ride.driverId,
-        title: 'Course attribuée',
-        message: 'Vous avez accepté la course. Déplacez-vous vers le point de prise en charge.',
-        category: 'info',
-        link: `/ride/${ride._id}`
-      })
-
-      // Emit socket event for real-time update
-      socketManager.emitToUser(ride.userId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'accepted',
-        driverId: ride.driverId,
-        timestamp: new Date()
-      })
-      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'accepted',
-        message: 'Course acceptée avec succès',
-        timestamp: new Date()
-      })
-    return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Erreur serveur" })
-  }
-})
-
-router.patch(
-  "/:id/start",
-  authMiddleware,
-  requireVerified,
-  validateRideId,
-  requireRole("driver"),
-  async (req, res) => {
-    try {
-      const { safetyCode } = req.body
-      const ride = await Ride.findById(req.params.id).select("+safetyCode")
-
-      if (!ride) {
-        return res.status(404).json({ message: "Course non trouvée" })
-      }
-
-      if (String(ride.driverId || "") !== String(req.user._id || "")) {
-        return res.status(403).json({ message: "Cette course ne vous est pas attribuée" })
-      }
-
-      if (ride.status !== "accepted") {
-        return res.status(400).json({ message: "La course doit d'abord etre acceptee" })
-      }
-
-      if (!safetyCode || String(safetyCode).trim() !== String(ride.safetyCode || "")) {
-        return res.status(403).json({ message: "Code de securite invalide" })
-      }
-
-      ride.status = "ongoing"
-      ride.safetyCodeVerifiedAt = new Date()
-      await ride.save()
-
-      await createNotification({
-        userId: ride.userId,
-        title: 'Course en cours',
-        message: 'Le chauffeur a démarré votre course. Bon voyage !',
-        category: 'success',
-        link: `/ride/${ride._id}`
-      })
-
-      // Emit socket event for real-time update
-      socketManager.emitToUser(ride.userId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'ongoing',
-        message: 'Course démarrée',
-        timestamp: new Date()
-      })
-      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'ongoing',
-        message: 'Course démarrée avec succès',
-        timestamp: new Date()
-      })
-
-      return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))
-    } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Erreur serveur" })
-    }
-  }
-)
-
-router.patch(
-  "/:id/complete",
-  authMiddleware,
-  requireVerified,
-  validateRideId,
-  async (req, res) => {
-    try {
-      const ride = await Ride.findById(req.params.id)
-
-      if (!ride) {
-        return res.status(404).json({ message: "Course non trouvée" })
-      }
-
-      if (String(ride.driverId || "") !== String(req.user._id || "") && String(ride.userId || "") !== String(req.user._id || "")) {
-        return res.status(403).json({ message: "Cette course ne vous concerne pas" })
-      }
-
-      if (ride.status !== "ongoing") {
-        return res.status(400).json({ message: "Seules les courses en cours peuvent etre terminees" })
-      }
-
-      if (ride.paymentStatus !== "paid") {
-        return res.status(400).json({ message: "Le paiement client et la commission doivent être réglés avant la clôture" })
-      }
-
-      if (ride.driverId && !ride.appCommissionDebitedAt) {
-        const driver = await User.findById(ride.driverId)
-        if (driver) {
-          const commissionAmount = Math.max(0, Math.round(Number(ride.appCommissionAmount || 0)))
-          driver.commissionCreditBalance = Math.round(Number(driver.commissionCreditBalance || 0)) - commissionAmount
-          driver.commissionCreditUpdatedAt = new Date()
-          driver.completedRides = Number(driver.completedRides || 0) + 1
-          await driver.save()
-          ride.appCommissionDebitedAt = new Date()
-        }
-      }
-
-      ride.status = "completed"
-      await ride.save()
-
-      await createNotification({
-        userId: ride.userId,
-        title: 'Course terminée',
-        message: 'Vous êtes arrivé à destination. Merci d\'avoir utilisé YOON WI !',
-        category: 'success',
-        link: `/ride/${ride._id}`
-      })
-
-      await createNotification({
-        userId: ride.driverId,
-        title: 'Course terminée',
-        message: 'Course complètement. Vous pouvez maintenant accepter une nouvelle course.',
-        category: 'success',
-        link: `/ride/${ride._id}`
-      })
-
-      // Emit socket event for real-time update
-      socketManager.emitToUser(ride.userId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'completed',
-        message: 'Course terminée',
-        timestamp: new Date()
-      })
-      socketManager.emitToUser(ride.driverId, 'ride:status-update', {
-        rideId: ride._id,
-        status: 'completed',
-        message: 'Course terminée',
-        timestamp: new Date()
-      })
-
-      return res.json(await serializeRide(ride, { viewerUserId: req.user._id, viewerRole: req.user.role }))
-    } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Erreur serveur" })
-    }
-  }
-)
-
-// Chat messages for a ride
-router.get("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+router.patch("/:id/accept", authMiddleware, requireVerified, requireRole("driver"), validateRideId, async (req, res) => {
   try {
     const ride = await Ride.findById(req.params.id)
-    if (!ride) {
-      return res.status(404).json({ message: "Course non trouvée" })
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+
+    if (ride.status !== "pending") {
+      return res.status(400).json({ message: "Course non disponible" })
     }
 
-    if (!canAccessRide(ride, req.user)) {
-      return res.status(403).json({ message: "Accès refusé" })
+    const creditStatus = ensurePositiveCommissionCredit(req.user)
+    if (!creditStatus.ok) {
+      return res.status(402).json(creditStatus)
     }
 
-    const messages = await Message.find({ rideId: req.params.id })
-      .sort({ createdAt: 1 })
-      .populate("senderId", "name firstName lastName profilePhotoUrl profilePhoto")
-
-    return res.json(messages)
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Erreur serveur" })
-  }
-})
-
-router.post("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
-  try {
-    const ride = await Ride.findById(req.params.id)
-    if (!ride) {
-      return res.status(404).json({ message: "Course non trouvée" })
+    if (!Number.isFinite(Number(ride.appCommissionAmount)) || Number(ride.appCommissionAmount) <= 0) {
+      const commission = rideCommission(ride.price)
+      ride.appCommissionPercent = commission.appCommissionPercent
+      ride.appCommissionAmount = commission.appCommissionAmount
+      ride.providerNetAmount = commission.providerNetAmount
     }
 
-    if (!canAccessRide(ride, req.user)) {
-      return res.status(403).json({ message: "Accès refusé" })
-    }
+    ride.status = "accepted"
+    ride.driverAvailabilityStatus = "driver_assigned"
+    ride.driverId = req.user._id
+    await ride.save()
 
-    if (!["accepted", "ongoing", "completed"].includes(String(ride.status || ""))) {
-      return res.status(400).json({ message: "Conversation indisponible pour ce statut de course" })
-    }
-
-    const content = String(req.body?.content || "").trim()
-    if (!content) {
-      return res.status(400).json({ message: "Le message ne peut pas être vide" })
-    }
-
-    const message = await Message.create({
-      rideId: req.params.id,
-      senderId: req.user._id,
-      senderRole: req.user.role,
-      content: content.slice(0, 1000)
+    await createNotification({
+      userId: ride.userId,
+      title: "Course acceptee",
+      message: "Un chauffeur a accepte votre course",
+      category: "success",
+      link: `/ride/${ride._id}`
     })
 
-    const populated = await message.populate("senderId", "name firstName lastName profilePhotoUrl profilePhoto")
-    return res.status(201).json(populated)
+    socketManager.emitToUser(ride.userId, "ride:status-update", {
+      rideId: ride._id,
+      status: "accepted",
+      driverId: req.user._id
+    })
+
+    socketManager.emitToUser(ride.driverId, "ride:status-update", {
+      rideId: ride._id,
+      status: "accepted"
+    })
+
+    return res.json(serializeRide(ride, req.user))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.patch("/:id/start", authMiddleware, requireVerified, requireRole("driver"), validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id).select("+safetyCode")
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+
+    if (String(ride.driverId || "") !== String(req.user._id || "")) {
+      return res.status(403).json({ message: "Non autorise" })
+    }
+
+    if (ride.status !== "accepted") {
+      return res.status(400).json({ message: "La course doit d'abord etre acceptee" })
+    }
+
+    if (String(ride.safetyCode || "") !== String(req.body?.safetyCode || "").trim()) {
+      return res.status(403).json({ message: "Code invalide" })
+    }
+
+    ride.status = "ongoing"
+    ride.safetyCodeVerifiedAt = new Date()
+    await ride.save()
+
+    socketManager.emitToUser(ride.userId, "ride:status-update", {
+      rideId: ride._id,
+      status: "ongoing"
+    })
+
+    return res.json(serializeRide(ride, req.user))
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.patch("/:id/driver-location", authMiddleware, requireVerified, requireRole("driver"), validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+
+    if (String(ride.driverId || "") !== String(req.user._id || "")) {
+      return res.status(403).json({ message: "Cette course ne vous est pas attribuee" })
+    }
+
+    const validation = validateLocation(req.body?.location)
+    if (!validation.valid) {
+      return res.status(400).json({ message: "Localisation chauffeur invalide" })
+    }
+
+    ride.currentDriverLocation = await enrichLocationAddress(validation.location, "Position chauffeur")
+    await ride.save()
+
+    socketManager.emitToUser(ride.userId, "driver:location-update", {
+      rideId: ride._id,
+      driverId: req.user._id,
+      location: ride.currentDriverLocation
+    })
+
+    return res.json({
+      success: true,
+      currentDriverLocation: ride.currentDriverLocation
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.patch("/:id/complete", authMiddleware, requireVerified, requireRole("driver"), validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+
+    if (String(ride.driverId || "") !== String(req.user._id || "")) {
+      return res.status(403).json({ message: "Cette course ne vous est pas attribuee" })
+    }
+
+    if (ride.status !== "ongoing") {
+      return res.status(400).json({ message: "La course doit etre en cours avant cloture" })
+    }
+
+    if (ride.paymentStatus !== "paid") {
+      return res.status(400).json({ message: "Le client doit regler la course avant la cloture" })
+    }
+
+    if (!ride.appCommissionDebitedAt) {
+      const commissionAmount = Math.max(0, Math.round(Number(ride.appCommissionAmount || 0)))
+      const driver = await User.findById(ride.driverId)
+      if (driver) {
+        driver.commissionCreditBalance = Math.round(Number(driver.commissionCreditBalance || 0)) - commissionAmount
+        driver.commissionCreditUpdatedAt = new Date()
+        await driver.save()
+      }
+      ride.appCommissionDebitedAt = new Date()
+    }
+
+    ride.status = "completed"
+    await ride.save()
+
+    socketManager.emitToUser(ride.userId, "ride:status-update", {
+      rideId: ride._id,
+      status: "completed"
+    })
+
+    return res.json(serializeRide(ride, req.user))
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
@@ -836,13 +417,10 @@ router.post("/:id/safety-report", authMiddleware, requireVerified, validateRideI
   try {
     const { type = "incident", message = "", location = {} } = req.body || {}
     const ride = await Ride.findById(req.params.id)
-
-    if (!ride) {
-      return res.status(404).json({ message: "Course non trouvée" })
-    }
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
 
     if (!canAccessRide(ride, req.user)) {
-      return res.status(403).json({ message: "Accès refusé" })
+      return res.status(403).json({ message: "Acces non autorise" })
     }
 
     ride.safetyReports.push({
@@ -859,27 +437,87 @@ router.post("/:id/safety-report", authMiddleware, requireVerified, validateRideI
 
     await ride.save()
 
-    const reportReason = "Suspension automatique apres plusieurs signalements de securite."
-    const targetUserId = getOtherPartyId(ride, req.user._id)
-    const targetUser = await maybeSuspendUser(targetUserId, reportReason)
+    const targetUserId = String(ride.userId || "") === String(req.user._id || "") ? ride.driverId : ride.userId
+    const targetUser = targetUserId ? await User.findById(targetUserId) : null
+    if (targetUser) {
+      targetUser.safetyReportsCount = (targetUser.safetyReportsCount || 0) + 1
+      targetUser.safetyLastReportAt = new Date()
+      if (targetUser.safetyReportsCount >= 3) {
+        const reportReason = "Suspension automatique apres plusieurs signalements de securite."
+        targetUser.status = "suspended"
+        targetUser.safetySuspendedAt = new Date()
+        targetUser.safetySuspensionReason = reportReason
+        targetUser.reviewNote = reportReason
+      }
+      await targetUser.save()
+    }
 
     if (targetUserId) {
-      await createNotification({
-        userId: targetUserId,
-        title: 'Signalement de sécurité',
-        message: 'Un signalement a été enregistré pour votre dernier trajet. Notre équipe examine le dossier.',
-        category: 'warning',
-        link: `/ride/${ride._id}`
+      socketManager.emitToUser(targetUserId, "emergency:alert", {
+        rideId: ride._id,
+        type,
+        message: String(message).slice(0, 500)
       })
     }
 
     return res.json({
-      message: "Signalement envoyé",
+      message: "Signalement envoye",
       reportsCount: ride.safetyReports.length,
       targetStatus: targetUser?.status || null,
       targetReportsCount: targetUser?.safetyReportsCount || null,
       suspended: targetUser?.status === "suspended" || false
     })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.get("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+    if (!canAccessRide(ride, req.user)) {
+      return res.status(403).json({ message: "Acces non autorise" })
+    }
+
+    const messages = await Message.find({ rideId: req.params.id })
+      .sort({ createdAt: 1 })
+      .populate("senderId", "name firstName lastName profilePhotoUrl")
+
+    return res.json(messages)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Erreur serveur" })
+  }
+})
+
+router.post("/:id/messages", authMiddleware, requireVerified, validateRideId, async (req, res) => {
+  try {
+    const content = String(req.body?.content || "").trim()
+    if (!content) {
+      return res.status(400).json({ message: "Le message ne peut pas etre vide" })
+    }
+
+    const ride = await Ride.findById(req.params.id)
+    if (!ride) return res.status(404).json({ message: "Course non trouvee" })
+    if (!canAccessRide(ride, req.user)) {
+      return res.status(403).json({ message: "Acces non autorise" })
+    }
+
+    if (!["accepted", "ongoing", "completed"].includes(String(ride.status || ""))) {
+      return res.status(400).json({ message: "Conversation non disponible pour ce statut" })
+    }
+
+    const message = await Message.create({
+      rideId: ride._id,
+      senderId: req.user._id,
+      senderRole: req.user.role,
+      content: content.slice(0, 1000)
+    })
+
+    const populated = await message.populate("senderId", "name firstName lastName profilePhotoUrl")
+    return res.status(201).json(populated)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ message: "Erreur serveur" })
