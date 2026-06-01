@@ -87,15 +87,6 @@ const busOptions = [
 
 const getVehicleOption = (vehicleType) => vehicleOptions.find((option) => option.value === vehicleType) || vehicleOptions[1]
 
-const computeCommissionPreview = (grossAmount) => {
-  const safeGross = Math.max(0, Number(grossAmount) || 0)
-  const appCommissionAmount = Math.max(0, Math.round((safeGross * 10) / 100))
-  return {
-    appCommissionPercent: 10,
-    appCommissionAmount,
-    providerNetAmount: Math.max(0, safeGross - appCommissionAmount)
-  }
-}
 
 const formatAddress = (place) => place?.address || place?.name || "Adresse indisponible"
 
@@ -122,9 +113,6 @@ const Ride = () => {
   const [rideMode, setRideMode] = useState("standard")
   const [busZone, setBusZone] = useState("marche")
   const [busTravelDate, setBusTravelDate] = useState("")
-  const [appCommissionPercent, setAppCommissionPercent] = useState(10)
-  const [appCommissionAmount, setAppCommissionAmount] = useState(250)
-  const [driverNetAmount, setDriverNetAmount] = useState(2250)
   const [paymentMethod, setPaymentMethod] = useState("Cash")
   const [submitting, setSubmitting] = useState(false)
   const [loadingEstimate, setLoadingEstimate] = useState(false)
@@ -142,11 +130,7 @@ const Ride = () => {
       nextRideMode === "bus_student"
         ? busOption.fare
         : Math.max(vehicleOption.minPrice, Math.round((Number(nextBasePrice) || 0) * vehicleOption.multiplier))
-    const commission = computeCommissionPreview(calculatedPrice)
     setPrice(calculatedPrice)
-    setAppCommissionPercent(commission.appCommissionPercent)
-    setAppCommissionAmount(commission.appCommissionAmount)
-    setDriverNetAmount(commission.providerNetAmount)
   }
 
   const refreshEstimate = async () => {
@@ -282,9 +266,6 @@ const Ride = () => {
         pickup,
         destination,
         price,
-        appCommissionPercent,
-        appCommissionAmount,
-        providerNetAmount: driverNetAmount,
         vehicleType: rideMode === "bus_student" ? `Bus - ${busZone}` : vehicleType,
         rideMode: rideMode === "bus_student" ? "bus_student" : "standard",
         busZone: rideMode === "bus_student" ? busZone : "",
@@ -632,14 +613,6 @@ const Ride = () => {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                <span className="min-w-0 break-words rounded-full bg-[#f2f6fb] px-3 py-2 text-[#165c96]">
-                  Part appli: {appCommissionPercent}% ({appCommissionAmount.toLocaleString()} F)
-                </span>
-                <span className="min-w-0 break-words rounded-full bg-[#edf9f1] px-3 py-2 text-[#178b55]">
-                  Net chauffeur: {driverNetAmount.toLocaleString()} F
-                </span>
-              </div>
 
               <div className="mt-4">
                 <div className="text-sm font-semibold text-[#16324f]">Mode de paiement</div>
