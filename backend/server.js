@@ -35,27 +35,43 @@ app.use(helmet())
 // ================= CORS FIX =================
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://yoonwi-app.vercel.app",
+  "https://ndar-express-i1hg.vercel.app",
+  "https://ndar-express-eezj.vercel.app",
+  "https://*.vercel.app",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:5174"
 ]
 
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",")
-  : DEFAULT_ALLOWED_ORIGINS
-const normalizedAllowedOrigins = allowedOrigins.map((origin) => String(origin || "").trim().replace(/\/+$/, ""))
+const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "")
+
+const configuredAllowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : []
+const normalizedAllowedOrigins = [...DEFAULT_ALLOWED_ORIGINS, ...configuredAllowedOrigins].map(normalizeOrigin).filter(Boolean)
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true
+
+  const normalizedOrigin = normalizeOrigin(origin)
+  return normalizedAllowedOrigins.some((allowed) => {
+    if (allowed.includes("*")) {
+      const regexPattern = `^${allowed
+        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, ".*")}$`
+      return new RegExp(regexPattern, "i").test(normalizedOrigin)
+    }
+
+    return normalizedOrigin.toLowerCase() === allowed.toLowerCase()
+  })
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true)
-
-      const normalizedOrigin = String(origin || "").trim().replace(/\/+$/, "")
-      if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true)
       }
 
-      return callback(new Error("CORS non autorisé"))
+      return callback(new Error("CORS non autorise"))
     },
     credentials: true
   })
@@ -130,7 +146,7 @@ const startServer = async () => {
       serverSelectionTimeoutMS: 10000
     })
 
-    console.log("MongoDB connecté")
+    console.log("MongoDB connecte")
 
     server.listen(PORT, () => {
       console.log(`Serveur running sur port ${PORT}`)
@@ -154,7 +170,7 @@ process.on("uncaughtException", (err) => {
 
 // ================= SHUTDOWN =================
 const shutdown = async (signal) => {
-  console.log(`${signal} reçu`)
+  console.log(`${signal} recu`)
 
   server.close(async () => {
     await mongoose.connection.close()

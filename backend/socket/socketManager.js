@@ -1,4 +1,4 @@
-﻿// backend/socket/socketManager.js
+// backend/socket/socketManager.js
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -7,7 +7,9 @@ const { validateLocation } = require('../utils/locationValidation');
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://yoonwi-app.vercel.app',
+  'https://ndar-express-i1hg.vercel.app',
   'https://ndar-express-eezj.vercel.app',
+  'https://*.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174'
@@ -16,9 +18,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 
 const buildAllowedOrigins = () => {
-  const raw = String(process.env.FRONTEND_URL || DEFAULT_ALLOWED_ORIGINS.join(','));
-  return raw
-    .split(',')
+  const configuredOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [];
+  return [...DEFAULT_ALLOWED_ORIGINS, ...configuredOrigins]
     .map((origin) => normalizeOrigin(origin))
     .filter(Boolean);
 };
@@ -31,7 +32,7 @@ const isOriginAllowed = (origin, allowedOrigins) => {
     if (allowed.includes('*')) {
       const regexPattern = `^${allowed
         .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-        .replace(/\\\*/g, '.*')}$`;
+        .replace(/\*/g, '.*')}$`;
       return new RegExp(regexPattern, 'i').test(normalizedOrigin);
     }
 
@@ -227,7 +228,7 @@ class SocketManager {
         });
       }
     } catch (error) {
-      console.error('Erreur mise à jour position passager:', error);
+      console.error('Erreur mise a jour position passager:', error);
     }
   }
 

@@ -80,11 +80,6 @@ const vehicleOptions = [
   { value: "Utilitaire", label: "Utilitaire", icon: "van", rate: 1200, multiplier: 1.35, minPrice: 2800 }
 ]
 
-const busOptions = [
-  { value: "marche", label: "Jusqu'au marché", icon: "edu", fare: 150 },
-  { value: "ville", label: "Ville", icon: "car", fare: 200 }
-]
-
 const getVehicleOption = (vehicleType) => vehicleOptions.find((option) => option.value === vehicleType) || vehicleOptions[1]
 
 const computeCommissionPreview = (grossAmount) => {
@@ -119,9 +114,6 @@ const Ride = () => {
   const [basePrice, setBasePrice] = useState(2500)
   const [price, setPrice] = useState(2500)
   const [vehicleType, setVehicleType] = useState("Voiture")
-  const [rideMode, setRideMode] = useState("standard")
-  const [busZone, setBusZone] = useState("marche")
-  const [busTravelDate, setBusTravelDate] = useState("")
   const [appCommissionPercent, setAppCommissionPercent] = useState(10)
   const [appCommissionAmount, setAppCommissionAmount] = useState(250)
   const [driverNetAmount, setDriverNetAmount] = useState(2250)
@@ -131,17 +123,11 @@ const Ride = () => {
   const [locationLoading, setLocationLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const selectedVehicle = rideMode === "bus_student"
-    ? busOptions.find((option) => option.value === busZone) || busOptions[0]
-    : getVehicleOption(vehicleType)
+  const selectedVehicle = getVehicleOption(vehicleType)
 
-  const updatePriceForVehicle = (nextBasePrice, nextVehicleType, nextRideMode = rideMode, nextBusZone = busZone) => {
-    const busOption = busOptions.find((option) => option.value === nextBusZone) || busOptions[0]
+  const updatePriceForVehicle = (nextBasePrice, nextVehicleType) => {
     const vehicleOption = getVehicleOption(nextVehicleType)
-    const calculatedPrice =
-      nextRideMode === "bus_student"
-        ? busOption.fare
-        : Math.max(vehicleOption.minPrice, Math.round((Number(nextBasePrice) || 0) * vehicleOption.multiplier))
+    const calculatedPrice = Math.max(vehicleOption.minPrice, Math.round((Number(nextBasePrice) || 0) * vehicleOption.multiplier))
     const commission = computeCommissionPreview(calculatedPrice)
     setPrice(calculatedPrice)
     setAppCommissionPercent(commission.appCommissionPercent)
@@ -158,8 +144,8 @@ const Ride = () => {
       const response = await api.post("/rides/estimate", {
         pickup,
         destination,
-        rideMode: rideMode === "bus_student" ? "bus_student" : "standard",
-        busZone: rideMode === "bus_student" ? busZone : ""
+        rideMode: "standard",
+        busZone: ""
       })
 
       const nextDistance = response.data.distanceKm ?? null
@@ -171,17 +157,14 @@ const Ride = () => {
       setDurationMin(nextDuration)
       setRouteGeometry(nextGeometry)
       setBasePrice(nextBasePrice)
-      if (rideMode === "bus_student") {
-        setVehicleType(busOptions.find((option) => option.value === busZone)?.label || "Bus")
-      }
-      updatePriceForVehicle(nextBasePrice, vehicleType, rideMode, busZone)
+      updatePriceForVehicle(nextBasePrice, vehicleType)
     } catch (estimateError) {
       console.error("Erreur d'estimation:", estimateError)
       setDistanceKm(null)
       setDurationMin(null)
       setRouteGeometry([])
       setBasePrice(2500)
-      updatePriceForVehicle(2500, vehicleType, rideMode, busZone)
+      updatePriceForVehicle(2500, vehicleType)
     } finally {
       setLoadingEstimate(false)
     }
@@ -247,12 +230,12 @@ const Ride = () => {
   useEffect(() => {
     refreshEstimate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickup, destination, rideMode, busZone])
+  }, [pickup, destination])
 
   useEffect(() => {
-    updatePriceForVehicle(basePrice, vehicleType, rideMode, busZone)
+    updatePriceForVehicle(basePrice, vehicleType)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basePrice, vehicleType, rideMode, busZone])
+  }, [basePrice, vehicleType])
 
   const selectPickup = (location) => {
     setPickup(location)
@@ -285,16 +268,9 @@ const Ride = () => {
         appCommissionPercent,
         appCommissionAmount,
         providerNetAmount: driverNetAmount,
-        vehicleType: rideMode === "bus_student" ? `Bus - ${busZone}` : vehicleType,
-        rideMode: rideMode === "bus_student" ? "bus_student" : "standard",
-        busZone: rideMode === "bus_student" ? busZone : "",
-        busOptions:
-          rideMode === "bus_student"
-            ? {
-                zone: busZone,
-                travelDate: busTravelDate || null
-              }
-            : undefined,
+        vehicleType,
+        rideMode: "standard",
+        busZone: "",
         paymentMethod,
         distanceKm,
         durationMin,
@@ -359,34 +335,6 @@ const Ride = () => {
 
             <section className="ndar-card relative z-0 isolate rounded-[36px] p-4 sm:p-5">
               <div className="space-y-4">
-                <div className="flex min-w-0 flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRideMode("standard")
-                      setVehicleType("Voiture")
-                    }}
-                    className={`min-w-0 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
-                      rideMode === "standard" ? "bg-[#165c96] text-white shadow-[0_12px_24px_rgba(22,92,150,0.18)]" : "bg-[#edf5fb] text-[#5a8fd1]"
-                    }`}
-                  >
-                    Course standard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRideMode("bus_student")
-                      const nextBusLabel = busOptions.find((option) => option.value === busZone)?.label || "Voyage groupé"
-                      setVehicleType(nextBusLabel)
-                    }}
-                    className={`min-w-0 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
-                      rideMode === "bus_student" ? "bg-[#165c96] text-white shadow-[0_12px_24px_rgba(22,92,150,0.18)]" : "bg-[#edf5fb] text-[#5a8fd1]"
-                    }`}
-                  >
-                    Voyage groupé
-                  </button>
-                </div>
-
                 <div className="flex min-w-0 items-start gap-3">
                   <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e0f4eb] text-[#2eaf72] shadow-[0_8px_18px_rgba(46,175,114,0.16)]">
                     <AppIcon name="pin" className="h-4 w-4" />
@@ -515,8 +463,7 @@ const Ride = () => {
                   <h2 className="mt-3 font-['Sora'] text-xl font-bold text-[#16324f]">Type de véhicule</h2>
                 </div>
               </div>
-              {rideMode === "standard" ? (
-                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
                   {vehicleOptions.map((option) => {
                     const active = vehicleType === option.value
                     return (
@@ -539,52 +486,6 @@ const Ride = () => {
                       )
                   })}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-                    {busOptions.map((option) => {
-                      const active = busZone === option.value
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setBusZone(option.value)
-                            setVehicleType(option.label)
-                          }}
-                          className={`min-w-0 rounded-[28px] border px-4 py-4 text-center transition-all ${
-                            active
-                              ? "border-[#165c96] bg-[linear-gradient(180deg,#e9f3fb_0%,#dcebf7_100%)] shadow-[0_18px_36px_rgba(18,96,161,0.12)]"
-                              : "border-[#e6dccf] bg-white"
-                          }`}
-                        >
-                          <div className={`mx-auto flex h-11 w-11 items-center justify-center rounded-full ${active ? "bg-white text-[#165c96]" : "bg-[#f4f7fb] text-[#6f7f92]"}`}>
-                            <AppIcon name={option.icon} className="h-5 w-5" />
-                          </div>
-                          <div className="mt-3 text-[15px] font-semibold text-[#16324f]">{option.label}</div>
-                          <div className="mt-1 text-xs text-[#5f7b94]">{option.fare.toLocaleString()} FCFA / place</div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <div className="grid min-w-0 gap-3 rounded-[22px] border border-[#d9e3ef] bg-[#f8fbff] p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                    <div className="min-w-0">
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#62809a]">Date de voyage</label>
-                      <input
-                        type="date"
-                        value={busTravelDate}
-                        onChange={(event) => setBusTravelDate(event.target.value)}
-                        className="h-12 w-full rounded-[14px] border border-[#dbe5ef] bg-white px-3 text-sm outline-none focus:border-[#165c96]"
-                      />
-                    </div>
-                    <div className="flex min-w-0 items-end">
-                      <div className="min-w-0 rounded-[14px] bg-white px-4 py-3 text-sm text-[#5f7b94] shadow-[0_8px_20px_rgba(8,35,62,0.04)]">
-                        Voyage groupé activé. Tu peux garder ce trajet pour une date précise.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </section>
 
             <section className="ndar-card rounded-[36px] p-4 sm:p-5">
@@ -611,11 +512,6 @@ const Ride = () => {
                   <div className="mt-2 text-sm font-bold text-[#165c96]">{price.toLocaleString()} FCFA</div>
                 </div>
               </div>
-              {rideMode === "bus_student" && (
-                <p className="mt-3 text-xs text-[#5f7b94]">
-                  Voyage groupé activé. Le tarif reste fixe par zone, comme l'ancien mode bus.
-                </p>
-              )}
             </section>
 
             <section className="ndar-card rounded-[36px] p-4 sm:p-5">
