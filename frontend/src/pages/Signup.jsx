@@ -106,7 +106,10 @@ const normalizePhoneInput = (value) => {
   return normalized
 }
 
-const isValidPhone = (value) => /^\+2217[05678]\d{7}$/.test(normalizePhoneInput(value))
+const isValidPhone = (value) => {
+  const normalized = normalizePhoneInput(value)
+  return /^\+2217[05678]\d{7}$/.test(normalized) || /^\+221[1-9]\d{8}$/.test(normalized)
+}
 const isValidPlate = (value) => /^[A-Z]{1,3}-\d{2,4}-[A-Z]{1,3}$/.test(value.trim().toUpperCase())
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 const isValidName = (value) => value.trim().length >= 2 && /^[a-zA-ZÀ-ÿ\s'-]+$/.test(value.trim())
@@ -252,6 +255,15 @@ const Signup = () => {
       if (!providerDetails.hasProfessionalTools) nextErrors.hasProfessionalTools = "Confirmez que le vehicule et les moyens sont disponibles."
     }
 
+    if (mappedRole === "client") {
+      const normalizedPhone = normalizePhoneInput(phone)
+      if (!normalizedPhone) {
+        nextErrors.phone = "Le numero de telephone est obligatoire."
+      } else if (!isValidPhone(normalizedPhone)) {
+        nextErrors.phone = "Utilisez un numero senegalais valide, par ex. +221 77 123 45 67."
+      }
+    }
+
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -280,8 +292,18 @@ const Signup = () => {
     }
   }
 
+  const handlePrimaryAction = (event) => {
+    if (event?.preventDefault) event.preventDefault()
+    if (requiresDocuments && step === 1) {
+      handleNextStep()
+      return
+    }
+
+    void handleSubmit(event)
+  }
+
   const handleSubmit = async (event) => {
-    event.preventDefault()
+    if (event?.preventDefault) event.preventDefault()
     setSubmitError(null)
 
     if (!validateStepOne()) {
@@ -577,11 +599,11 @@ const Signup = () => {
 
               <div className="mt-6 flex gap-3">
                 {requiresDocuments ? (
-                  <button type="button" onClick={handleNextStep} className="w-full rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)]">
+                  <button type="button" onClick={handlePrimaryAction} className="w-full rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)]">
                     Continuer vers les dossiers
                   </button>
                 ) : (
-                  <button type="submit" disabled={loading} className="w-full rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)] disabled:opacity-70">
+                  <button type="button" onClick={handlePrimaryAction} disabled={loading} className="w-full rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)] disabled:opacity-70">
                     {loading ? "Creation du compte..." : "Creer mon compte"}
                   </button>
                 )}
@@ -702,7 +724,7 @@ const Signup = () => {
                 <button type="button" onClick={() => setStep(1)} className="w-1/3 rounded-[26px] bg-[#edf3f8] px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-[#1260a1]">
                   Retour
                 </button>
-                <button type="submit" disabled={loading} className="w-2/3 rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)] disabled:opacity-70">
+                <button type="button" onClick={handlePrimaryAction} disabled={loading} className="w-2/3 rounded-[26px] bg-[linear-gradient(135deg,#1260a1_0%,#0a3760_100%)] px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-[0_22px_42px_rgba(8,35,62,0.22)] disabled:opacity-70">
                   {loading ? "Creation du compte..." : "Confirmer et creer"}
                 </button>
               </div>
