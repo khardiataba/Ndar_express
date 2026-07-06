@@ -5,6 +5,7 @@ const path = require("path")
 const http = require("http")
 const helmet = require("helmet")
 const rateLimit = require("express-rate-limit")
+const bcrypt = require("bcryptjs")
 require("dotenv").config({ path: path.join(__dirname, ".env") })
 
 // ================= ROUTES =================
@@ -135,6 +136,46 @@ app.use((err, req, res, next) => {
 // ================= DATABASE =================
 const PORT = process.env.PORT || 5000
 
+const ensureDefaultAdmin = async () => {
+  try {
+    const User = require("./models/User")
+    const adminEmail = String(process.env.ADMIN_EMAIL || "admin@yoonwi.sn").trim().toLowerCase()
+    const adminPassword = process.env.ADMIN_PASSWORD || "Admin12345!"
+    const adminPhone = process.env.ADMIN_PHONE || "+221771234567"
+
+    const existing = await User.findOne({ email: adminEmail })
+    const hashedPassword = await bcrypt.hash(adminPassword, 10)
+
+    if (existing) {
+      existing.firstName = "Admin"
+      existing.lastName = "YOONWI"
+      existing.name = "Admin YOONWI"
+      existing.phone = adminPhone
+      existing.role = "admin"
+      existing.status = "verified"
+      existing.password = hashedPassword
+      await existing.save()
+      console.log(`Admin ensured: ${adminEmail}`)
+      return
+    }
+
+    await User.create({
+      firstName: "Admin",
+      lastName: "YOONWI",
+      name: "Admin YOONWI",
+      email: adminEmail,
+      password: hashedPassword,
+      phone: adminPhone,
+      role: "admin",
+      status: "verified"
+    })
+
+    console.log(`Admin created: ${adminEmail}`)
+  } catch (error) {
+    console.error("Impossible de preparer le compte admin:", error.message)
+  }
+}
+
 const startServer = async () => {
   try {
     if (!process.env.MONGO_URI) throw new Error("MONGO_URI manquant")
@@ -147,6 +188,7 @@ const startServer = async () => {
     })
 
     console.log("MongoDB connecte")
+    await ensureDefaultAdmin()
 
     server.listen(PORT, () => {
       console.log(`Serveur running sur port ${PORT}`)
