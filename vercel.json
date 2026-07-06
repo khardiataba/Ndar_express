@@ -6,15 +6,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://yoon-wi.onrender.com/api/:path*"
+      "destination": "https://ndar-express-eezj.vercel.app/api/:path*"
     },
     {
       "source": "/socket.io/:path*",
-      "destination": "https://yoon-wi.onrender.com/socket.io/:path*"
+      "destination": "https://ndar-express-eezj.vercel.app/socket.io/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://yoon-wi.onrender.com/uploads/:path*"
+      "destination": "https://ndar-express-eezj.vercel.app/uploads/:path*"
     },
     {
       "source": "/:path*",
