@@ -62,6 +62,13 @@ coverage/
 .vercel/
 .netlify/
 
+# Rapport de vérification frontend/backend (local only)
+FRONTEND_BACKEND_ALIGNMENT_REPORT.md
+REFACTORING_API_CENTRALIZATION.md
+QUICK_VERIFICATION_CHECKLIST.md
+API_CONCORDANCE_MATRIX.md
+README_VERIFICATION_REPORTS.md
+
 # Editors
 .vscode/
 .idea/
